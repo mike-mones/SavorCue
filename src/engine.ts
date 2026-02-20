@@ -260,6 +260,11 @@ export class SessionEngine {
 
     showNotification('SavorCue', 'How full are you right now?');
 
+    // Vibrate the device if supported
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200, 100, 200]);
+    }
+
     this.notify();
   }
 
