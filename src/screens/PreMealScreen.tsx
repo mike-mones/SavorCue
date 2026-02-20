@@ -126,9 +126,8 @@ export default function PreMealScreen() {
   return (
     <div style={{ backgroundColor: '#faf9f7', minHeight: '100vh', color: '#1a1a1a' }}>
       {/* Header */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(250,249,247,0.92)', backdropFilter: 'blur(20px)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(250,249,247,0.92)', backdropFilter: 'blur(20px)', padding: '16px 20px' }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>New meal</h2>
-        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: '#b0ada8' }}>Cancel</button>
       </div>
 
       <div style={{ padding: '0 20px 140px', maxWidth: 480, margin: '0 auto' }}>
