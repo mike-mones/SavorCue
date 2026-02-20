@@ -36,10 +36,10 @@ export default function TabBar() {
                 key={tab.key}
                 onClick={() => navigate(tab.path)}
                 style={{
-                  width: 52, height: 52, borderRadius: 26,
+                  width: 48, height: 48, borderRadius: 24,
                   backgroundColor: '#0d9488', color: '#fff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginTop: -18,
+                  marginTop: -14,
                   boxShadow: '0 4px 14px rgba(13,148,136,0.35)',
                 }}
               >

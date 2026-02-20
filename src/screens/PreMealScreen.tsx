@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context';
 import type {
@@ -20,6 +20,14 @@ function fullnessLabel(v: number): string {
   return 'Stuffed';
 }
 
+function fullnessColor(v: number): string {
+  if (v <= 2) return '#0d9488';
+  if (v <= 4) return '#84cc16';
+  if (v <= 5) return '#eab308';
+  if (v <= 7) return '#f97316';
+  return '#ef4444';
+}
+
 function Chips({ label, options, value, onChange }: {
   label: string;
   options: { key: string; label: string }[];
@@ -29,7 +37,7 @@ function Chips({ label, options, value, onChange }: {
   return (
     <div>
       <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.5, color: '#8a8a8a', marginBottom: 10 }}>{label}</p>
-      <div className="flex gap-2">
+      <div style={{ display: 'flex', gap: 8 }}>
         {options.map((o) => {
           const sel = value === o.key;
           return (
@@ -59,13 +67,41 @@ function Chips({ label, options, value, onChange }: {
 export default function PreMealScreen() {
   const { engine } = useApp();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fullness, setFullness] = useState<number | null>(null);
   const [location, setLocation] = useState<LocationType | ''>('');
+  const [mealSource, setMealSource] = useState<'homecooked' | 'takeout' | ''>('');
   const [social, setSocial] = useState<SocialType | ''>('');
   const [mealType, setMealType] = useState<MealType | ''>('');
   const [healthyIndulgent, setHealthyIndulgent] = useState<HealthyIndulgent | ''>('');
   const [alcohol, setAlcohol] = useState<boolean | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
+
+  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 800;
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          const ratio = Math.min(maxDim / w, maxDim / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        setPhoto(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleStart = async () => {
     if (fullness === null) return;
@@ -73,9 +109,11 @@ export default function PreMealScreen() {
       location: location || null,
       social: social || null,
       mealType: mealType || null,
+      mealSource: mealSource || null,
       hungerBefore: fullness,
       healthyIndulgent: healthyIndulgent || null,
       alcohol,
+      photoBlob: photo,
     };
     const mode: MealMode = location === 'restaurant' ? 'restaurant' : social === 'with_people' ? 'social' : mealType === 'snack' ? 'snack' : 'quick';
     await engine.startMeal(mode, context);
@@ -83,6 +121,7 @@ export default function PreMealScreen() {
   };
 
   const active = fullness !== null;
+  const numColor = active ? fullnessColor(fullness!) : '#ddd';
 
   return (
     <div style={{ backgroundColor: '#faf9f7', minHeight: '100vh', color: '#1a1a1a' }}>
@@ -99,7 +138,7 @@ export default function PreMealScreen() {
             How full are you?
           </p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
-            <span style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: active ? '#0d9488' : '#ddd' }}>
+            <span style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: numColor }}>
               {active ? fullness : '\u2014'}
             </span>
             <span style={{ fontSize: 14, color: '#8a8a8a' }}>
@@ -143,12 +182,23 @@ export default function PreMealScreen() {
             label="Where?"
             options={[
               { key: 'home', label: 'Home' },
-              { key: 'restaurant', label: 'Out' },
+              { key: 'restaurant', label: 'Restaurant' },
               { key: 'other', label: 'Other' },
             ]}
             value={location}
-            onChange={(v) => setLocation(v as LocationType)}
+            onChange={(v) => { setLocation(v as LocationType); if (v !== 'home') setMealSource(''); }}
           />
+          {location === 'home' && (
+            <Chips
+              label="Meal source"
+              options={[
+                { key: 'homecooked', label: 'Homecooked' },
+                { key: 'takeout', label: 'Takeout' },
+              ]}
+              value={mealSource}
+              onChange={(v) => setMealSource(v as 'homecooked' | 'takeout' | '')}
+            />
+          )}
           <Chips
             label="With who?"
             options={[
@@ -177,11 +227,25 @@ export default function PreMealScreen() {
             value={alcohol === true ? 'yes' : alcohol === false ? 'no' : ''}
             onChange={(v) => setAlcohol(v === 'yes' ? true : v === 'no' ? false : null)}
           />
+
+          {/* Photo */}
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.5, color: '#8a8a8a', marginBottom: 10 }}>Meal photo</p>
+            <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhoto} style={{ display: 'none' }} />
+            {photo ? (
+              <div style={{ position: 'relative' }}>
+                <img src={photo} alt="Meal" style={{ width: '100%', borderRadius: 14, maxHeight: 200, objectFit: 'cover' }} />
+                <button onClick={() => setPhoto(null)} style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              </div>
+            ) : (
+              <button onClick={() => fileInputRef.current?.click()} style={{ width: '100%', padding: '16px 0', borderRadius: 14, border: '2px dashed #d4d2ce', color: '#8a8a8a', fontSize: 14, fontWeight: 600 }}>Take a photo</button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Start */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 20px', paddingBottom: 28, backgroundColor: 'rgba(250,249,247,0.9)', backdropFilter: 'blur(20px)', borderTop: '1px solid #f0eeeb' }}>
+      <div style={{ position: 'fixed', bottom: 72, left: 0, right: 0, padding: '10px 20px', backgroundColor: 'rgba(250,249,247,0.92)', backdropFilter: 'blur(20px)' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <button
             onClick={handleStart}

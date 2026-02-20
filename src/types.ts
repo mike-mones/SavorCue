@@ -14,11 +14,13 @@ export interface MealContext {
   location?: LocationType | null;
   social?: SocialType | null;
   mealType?: MealType | null;
+  mealSource?: 'homecooked' | 'takeout' | null;
   estimatedCalories?: number | null;
   cuisine?: string | null;
   healthyIndulgent?: HealthyIndulgent | null;
   hungerBefore?: number | null;
   alcohol?: boolean | null;
+  photoBlob?: string | null;  // base64 data URL
 }
 
 export interface FinalSummary {

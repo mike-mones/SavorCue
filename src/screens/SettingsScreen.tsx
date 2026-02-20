@@ -73,6 +73,7 @@ export default function SettingsScreen() {
   const { settings, updateSettings } = useApp();
   const [local, setLocal] = useState<AppSettings>({ ...settings });
   const [saved, setSaved] = useState(false);
+  const hasChanges = JSON.stringify(local) !== JSON.stringify(settings);
 
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setLocal((prev) => ({ ...prev, [key]: value }));
@@ -133,19 +134,30 @@ export default function SettingsScreen() {
       </div>
 
       {/* Prompt Timing */}
-      <Card title="Prompt Timing">
-        {[
-          { band: '0-2', label: 'Fullness 0–2', desc: 'Not hungry yet' },
-          { band: '3-4', label: 'Fullness 3–4', desc: 'Getting there' },
-          { band: '5-6', label: 'Fullness 5–6', desc: 'Moderate' },
-          { band: '7', label: 'Fullness 7', desc: 'High' },
-          { band: '8', label: 'Fullness 8', desc: 'Very high' },
-          { band: '9-10', label: 'Fullness 9–10', desc: 'Triggers done flow' },
-        ].map(({ band, label, desc }) => (
-          <Row key={band} label={label} desc={`${desc} · ${schedule[band] ?? 0}s`}>
+      <Card title="Prompt Timing (seconds)">
+        <div className="py-2">
+          <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 12 }}>Presets</p>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+            {[
+              { label: 'Gradual', desc: 'Slowly decreasing', vals: { '0': 300, '1': 300, '2': 270, '3': 240, '4': 210, '5': 180, '6': 150, '7': 120, '8': 60, '9': 0, '10': 0 } },
+              { label: 'Steady', desc: 'Consistent pace', vals: { '0': 180, '1': 180, '2': 180, '3': 180, '4': 180, '5': 120, '6': 120, '7': 90, '8': 60, '9': 0, '10': 0 } },
+              { label: 'Aggressive', desc: 'Frequent check-ins', vals: { '0': 120, '1': 120, '2': 90, '3': 90, '4': 60, '5': 60, '6': 45, '7': 30, '8': 20, '9': 0, '10': 0 } },
+            ].map((preset) => (
+              <button
+                key={preset.label}
+                onClick={() => { setLocal((p) => ({ ...p, promptScheduleByRating: preset.vals })); setSaved(false); }}
+                style={{ padding: '8px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600, backgroundColor: '#f0eeeb', color: '#5a5a5a' }}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {Array.from({ length: 11 }, (_, i) => (
+          <Row key={i} label={`Fullness ${i}`} desc={i >= 9 ? 'Triggers done flow' : `${schedule[String(i)] ?? 0}s`}>
             <NumberInput
-              value={schedule[band] ?? 0}
-              onChange={(v) => updateSchedule(band, v)}
+              value={schedule[String(i)] ?? 0}
+              onChange={(v) => updateSchedule(String(i), v)}
               min={0}
               max={600}
             />
@@ -283,22 +295,24 @@ export default function SettingsScreen() {
         </div>
       </Card>
 
-      {/* Save bar */}
-      <div style={{ position: 'fixed', bottom: 80, left: 0, right: 0, padding: '12px 16px', backgroundColor: 'rgba(250,249,247,0.92)', backdropFilter: 'blur(20px)' }}>
-        <div style={{ maxWidth: 480, margin: '0 auto' }}>
-          <button
-            onClick={handleSave}
-            style={{
-              width: '100%', padding: '14px 0', borderRadius: 14, fontSize: 16, fontWeight: 700,
-              backgroundColor: saved ? '#e6f7f2' : '#0d9488',
-              color: saved ? '#0d7377' : '#fff',
-              transition: 'all 0.2s',
-            }}
-          >
-            {saved ? '✓ Saved' : 'Save Settings'}
-          </button>
+      {/* Save bar — only show if changed */}
+      {(hasChanges || saved) && (
+        <div style={{ position: 'fixed', bottom: 68, left: 0, right: 0, padding: '10px 16px', backgroundColor: 'rgba(250,249,247,0.95)', backdropFilter: 'blur(20px)' }}>
+          <div style={{ maxWidth: 480, margin: '0 auto' }}>
+            <button
+              onClick={handleSave}
+              style={{
+                width: '100%', padding: '14px 0', borderRadius: 14, fontSize: 16, fontWeight: 700,
+                backgroundColor: saved ? '#e6f7f2' : '#0d9488',
+                color: saved ? '#0d7377' : '#fff',
+                transition: 'all 0.2s',
+              }}
+            >
+              {saved ? '✓ Saved' : 'Save Settings'}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
