@@ -17,18 +17,18 @@ function OptionRow({ label, options, value, onChange }: {
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-4 shadow-sm mb-3">
-      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">{label}</p>
-      <div className="flex flex-wrap gap-2">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm mb-3 overflow-hidden">
+      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 px-4 pt-4 pb-2">{label}</p>
+      <div className="px-2 pb-2">
         {options.map((o) => (
           <button
             key={o.key}
             onClick={() => onChange(value === o.key ? '' : o.key)}
             style={value === o.key ? { backgroundColor: '#10b981', color: '#fff' } : undefined}
-            className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-95 ${
+            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98] mb-1 last:mb-0 ${
               value === o.key
                 ? ''
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300'
             }`}
           >
             {o.label}
@@ -61,7 +61,7 @@ export default function PreMealScreen() {
   const navigate = useNavigate();
 
   const [hungerBefore, setHungerBefore] = useState<number | null>(null);
-  const [mode, setMode] = useState<MealMode>('quick');
+  const [mode, setMode] = useState<MealMode | ''>('');
   const [location, setLocation] = useState<LocationType | ''>('');
   const [social, setSocial] = useState<SocialType | ''>('');
   const [mealType, setMealType] = useState<MealType | ''>('');
@@ -79,7 +79,7 @@ export default function PreMealScreen() {
       healthyIndulgent: healthyIndulgent || null,
       alcohol,
     };
-    await engine.startMeal(mode, context);
+    await engine.startMeal((mode || 'quick') as MealMode, context);
     navigate('/meal');
   };
 
