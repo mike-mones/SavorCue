@@ -5,7 +5,7 @@ import { useAuth } from '../authContext';
 import type { AppSettings, UnlockMethod } from '../types';
 import { DEFAULT_SETTINGS } from '../defaults';
 import { exportAllData, exportCSV } from '../db';
-import { showNotification, schedulePushNotification, getFCMToken } from '../notifications';
+import { showNotification, schedulePushNotification, getFCMToken, getNotificationDebugInfo, requestNotificationPermission } from '../notifications';
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -282,8 +282,17 @@ export default function SettingsScreen() {
           {adminOpen && (
             <>
               <div style={{ padding: '14px 0', borderBottom: '1px solid #f0eeeb' }}>
-                <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 10 }}>Test notifications</p>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 10 }}>Notifications</p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                  <button
+                    onClick={async () => {
+                      const ok = await requestNotificationPermission();
+                      setTestStatus(ok ? 'Permission granted' : 'Permission failed');
+                    }}
+                    style={{ padding: '10px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600, backgroundColor: '#0d9488', color: '#fff' }}
+                  >
+                    Request permission
+                  </button>
                   <button
                     onClick={() => { showNotification('SavorCue', 'Test local notification'); setTestStatus('Local sent'); }}
                     style={{ padding: '10px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600, backgroundColor: '#f0eeeb', color: '#5a5a5a' }}
@@ -293,8 +302,12 @@ export default function SettingsScreen() {
                   <button
                     onClick={async () => {
                       if (user) {
-                        await schedulePushNotification(user.uid, 'test-' + Date.now(), 5);
-                        setTestStatus('Push scheduled in 5s');
+                        try {
+                          await schedulePushNotification(user.uid, 'test-' + Date.now(), 5);
+                          setTestStatus('Push scheduled in 5s');
+                        } catch (e) {
+                          setTestStatus('Push error: ' + (e instanceof Error ? e.message : String(e)));
+                        }
                       }
                     }}
                     style={{ padding: '10px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600, backgroundColor: '#f0eeeb', color: '#5a5a5a' }}
@@ -302,7 +315,7 @@ export default function SettingsScreen() {
                     Push in 5 sec
                   </button>
                 </div>
-                {testStatus && <p style={{ fontSize: 12, color: '#0d9488', marginTop: 8 }}>{testStatus}</p>}
+                {testStatus && <p style={{ fontSize: 12, color: '#0d9488', marginTop: 4 }}>{testStatus}</p>}
               </div>
               <div style={{ padding: '14px 0', borderBottom: '1px solid #f0eeeb' }}>
                 <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 10 }}>Navigate to screens</p>
@@ -324,10 +337,10 @@ export default function SettingsScreen() {
                 </div>
               </div>
               <div style={{ padding: '14px 0' }}>
-                <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 6 }}>FCM Token</p>
-                <p style={{ fontSize: 10, color: '#b0ada8', wordBreak: 'break-all', fontFamily: 'monospace' }}>
-                  {getFCMToken() || 'Not available'}
-                </p>
+                <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 6 }}>Debug info</p>
+                <pre style={{ fontSize: 10, color: '#b0ada8', wordBreak: 'break-all', fontFamily: 'monospace', whiteSpace: 'pre-wrap', margin: 0 }}>
+                  {getNotificationDebugInfo()}
+                </pre>
               </div>
             </>
           )}
