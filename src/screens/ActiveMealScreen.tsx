@@ -31,14 +31,18 @@ export default function ActiveMealScreen() {
     return () => clearInterval(id);
   }, []);
 
-  // Redirect if no active session
+  // Redirect if no active session (unless admin testing)
   useEffect(() => {
     if (!active) {
+      try { if (localStorage.getItem('savorcue_admin') === '1') return; } catch {}
       navigate('/');
     }
   }, [active, navigate]);
 
-  if (!active) return null;
+  if (!active) {
+    try { if (localStorage.getItem('savorcue_admin') === '1') return <div style={{ backgroundColor: '#faf9f7', minHeight: '100vh', padding: 40, textAlign: 'center', color: '#8a8a8a' }}>No active session (admin preview)</div>; } catch {}
+    return null;
+  }
 
   const { session, state, timer, lastFullnessRating } = active;
 

@@ -90,7 +90,9 @@ export default function SettingsScreen() {
   const navigate = useNavigate();
   const [local, setLocal] = useState<AppSettings>({ ...settings });
   const [saved, setSaved] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(() => {
+    try { return localStorage.getItem('savorcue_admin') === '1'; } catch { return false; }
+  });
   const [testStatus, setTestStatus] = useState('');
   const hasChanges = JSON.stringify(local) !== JSON.stringify(settings);
 
@@ -233,23 +235,6 @@ export default function SettingsScreen() {
         </SettingRow>
       </Section>
 
-      {/* Home Assistant */}
-      <Section title="Home Assistant">
-        <div style={{ padding: '14px 0', borderBottom: '1px solid #f0eeeb' }}>
-          <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 8 }}>Webhook URL</p>
-          <input
-            type="url"
-            value={local.haWebhookUrl ?? ''}
-            onChange={(e) => update('haWebhookUrl', e.target.value)}
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #e8e6e3', fontSize: 13, outline: 'none', backgroundColor: '#faf9f7' }}
-            placeholder="https://your-ha-instance/api/webhook/..."
-          />
-        </div>
-        <SettingRow label="Mirror events" desc="Send events to HA">
-          <Toggle on={!!local.haEventMirroring} onChange={(v) => update('haEventMirroring', v)} />
-        </SettingRow>
-      </Section>
-
       {/* Data */}
       <Section title="Data">
         <div style={{ padding: '14px 0', display: 'flex', gap: 10, borderBottom: '1px solid #f0eeeb' }}>
@@ -277,7 +262,7 @@ export default function SettingsScreen() {
       {isAdmin && (
         <Section title="Admin">
           <SettingRow label="Admin mode">
-            <Toggle on={adminOpen} onChange={setAdminOpen} />
+            <Toggle on={adminOpen} onChange={(v) => { setAdminOpen(v); try { localStorage.setItem('savorcue_admin', v ? '1' : '0'); } catch {} }} />
           </SettingRow>
           {adminOpen && (
             <>
@@ -304,7 +289,7 @@ export default function SettingsScreen() {
                       if (user) {
                         try {
                           await schedulePushNotification(user.uid, 'test-' + Date.now(), 5);
-                          setTestStatus('Push scheduled in 5s');
+                          setTestStatus('Push scheduled (arrives within ~1 min). Note: FCM push does not work on iOS Safari.');
                         } catch (e) {
                           setTestStatus('Push error: ' + (e instanceof Error ? e.message : String(e)));
                         }

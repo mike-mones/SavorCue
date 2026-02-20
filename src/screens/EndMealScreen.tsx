@@ -85,6 +85,11 @@ export default function EndMealScreen() {
   const [note, setNote] = useState('');
 
   if (!active) {
+    try {
+      if (localStorage.getItem('savorcue_admin') === '1') {
+        return <div style={{ backgroundColor: '#faf9f7', minHeight: '100vh', padding: 40, textAlign: 'center', color: '#8a8a8a' }}>No active session (admin preview)</div>;
+      }
+    } catch {}
     navigate('/');
     return null;
   }
