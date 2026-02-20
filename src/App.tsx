@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState } from 'react';
 import { AppProvider, useApp } from './context';
 import { AuthProvider, useAuth } from './authContext';
 import LoginScreen from './screens/LoginScreen';
+import OnboardingScreen from './screens/OnboardingScreen';
 import PreMealScreen from './screens/PreMealScreen';
 import ActiveMealScreen from './screens/ActiveMealScreen';
 import EndMealScreen from './screens/EndMealScreen';
@@ -48,17 +50,22 @@ function AppRoutes() {
 
 function AuthGate() {
   const { user, loading } = useAuth();
+  const [onboarded, setOnboarded] = useState(() => localStorage.getItem('savorcue_onboarded') === '1');
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <p className="text-gray-500 dark:text-gray-400 text-lg">Loading...</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#faf9f7', color: '#8a8a8a' }}>
+        <p>Loading...</p>
       </div>
     );
   }
 
   if (!user) {
     return <LoginScreen />;
+  }
+
+  if (!onboarded) {
+    return <OnboardingScreen onComplete={() => setOnboarded(true)} />;
   }
 
   return (

@@ -46,6 +46,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (!mounted) return;
+
+        // Pick up ntfy topic from onboarding if not already set
+        if (!loaded.ntfyTopic) {
+          const onboardingTopic = localStorage.getItem('savorcue_ntfy_topic');
+          if (onboardingTopic) {
+            loaded = { ...loaded, ntfyTopic: onboardingTopic };
+            saveSettings(loaded);
+            if (user) syncSettingsToCloud(user.uid, loaded).catch(() => {});
+          }
+        }
+
         setSettings(loaded);
         engineRef.current.updateSettings(loaded);
         await engineRef.current.restore();
