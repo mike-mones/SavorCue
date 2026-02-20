@@ -10,7 +10,7 @@ export function showNotification(title: string, body: string): void {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   new Notification(title, {
     body,
-    icon: '/SavorCue/icon-192.png',
+    icon: '/icon-192.png',
     tag: 'savorcue-prompt',
   } as NotificationOptions);
 }
