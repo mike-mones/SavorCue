@@ -2,7 +2,7 @@
 /* global firebase */
 
 // === PWA Cache Management (network-first) ===
-const CACHE_VERSION = 'savorcue-v2';
+const CACHE_VERSION = 'savorcue-v3';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
