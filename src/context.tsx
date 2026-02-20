@@ -28,28 +28,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      // Load local settings first
-      let loaded = await loadSettings();
+      try {
+        // Load local settings first
+        let loaded = await loadSettings();
 
-      // If signed in, try to load from cloud and merge
-      if (user) {
-        const cloudSettings = await getSettingsFromCloud(user.uid);
-        if (cloudSettings) loaded = cloudSettings;
-        engineRef.current.setUid(user.uid);
-      } else {
-        engineRef.current.setUid(null);
+        // If signed in, try to load from cloud and merge
+        if (user) {
+          try {
+            const cloudSettings = await getSettingsFromCloud(user.uid);
+            if (cloudSettings) loaded = cloudSettings;
+          } catch {
+            // Cloud unavailable, use local
+          }
+          engineRef.current.setUid(user.uid);
+        } else {
+          engineRef.current.setUid(null);
+        }
+
+        if (!mounted) return;
+        setSettings(loaded);
+        engineRef.current.updateSettings(loaded);
+        await engineRef.current.restore();
+        setActive(engineRef.current.getActive());
+
+        // Request notification permission
+        requestNotificationPermission();
+      } catch {
+        // Ensure app loads even if init fails
       }
-
-      if (!mounted) return;
-      setSettings(loaded);
-      engineRef.current.updateSettings(loaded);
-      await engineRef.current.restore();
-      setActive(engineRef.current.getActive());
-
-      // Request notification permission
-      requestNotificationPermission();
-
-      setReady(true);
+      if (mounted) setReady(true);
     })();
     return () => { mounted = false; };
   }, [user]);
