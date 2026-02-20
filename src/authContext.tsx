@@ -3,9 +3,12 @@ import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
 
+const ADMIN_EMAILS = ['mikemones2584@gmail.com'];
+
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
+  isAdmin: boolean;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -33,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin: !!user && ADMIN_EMAILS.includes(user.email ?? ''), signInWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

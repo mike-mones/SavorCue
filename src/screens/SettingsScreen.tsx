@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context';
+import { useAuth } from '../authContext';
 import type { AppSettings, UnlockMethod } from '../types';
 import { DEFAULT_SETTINGS } from '../defaults';
 import { exportAllData, exportCSV } from '../db';
+import { showNotification, schedulePushNotification, getFCMToken } from '../notifications';
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -83,8 +86,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useApp();
+  const { isAdmin, user } = useAuth();
+  const navigate = useNavigate();
   const [local, setLocal] = useState<AppSettings>({ ...settings });
   const [saved, setSaved] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [testStatus, setTestStatus] = useState('');
   const hasChanges = JSON.stringify(local) !== JSON.stringify(settings);
 
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
@@ -265,6 +272,67 @@ export default function SettingsScreen() {
           </button>
         </div>
       </Section>
+
+      {/* Admin Panel — only for admin users */}
+      {isAdmin && (
+        <Section title="Admin">
+          <SettingRow label="Admin mode">
+            <Toggle on={adminOpen} onChange={setAdminOpen} />
+          </SettingRow>
+          {adminOpen && (
+            <>
+              <div style={{ padding: '14px 0', borderBottom: '1px solid #f0eeeb' }}>
+                <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 10 }}>Test notifications</p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => { showNotification('SavorCue', 'Test local notification'); setTestStatus('Local sent'); }}
+                    style={{ padding: '10px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600, backgroundColor: '#f0eeeb', color: '#5a5a5a' }}
+                  >
+                    Local notification
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (user) {
+                        await schedulePushNotification(user.uid, 'test-' + Date.now(), 5);
+                        setTestStatus('Push scheduled in 5s');
+                      }
+                    }}
+                    style={{ padding: '10px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600, backgroundColor: '#f0eeeb', color: '#5a5a5a' }}
+                  >
+                    Push in 5 sec
+                  </button>
+                </div>
+                {testStatus && <p style={{ fontSize: 12, color: '#0d9488', marginTop: 8 }}>{testStatus}</p>}
+              </div>
+              <div style={{ padding: '14px 0', borderBottom: '1px solid #f0eeeb' }}>
+                <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 10 }}>Navigate to screens</p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[
+                    { label: 'Pre-meal', path: '/pre-meal' },
+                    { label: 'Active meal', path: '/meal' },
+                    { label: 'End meal', path: '/end-meal' },
+                    { label: 'Summary', path: '/summary' },
+                  ].map(({ label, path }) => (
+                    <button
+                      key={path}
+                      onClick={() => navigate(path)}
+                      style={{ padding: '10px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600, backgroundColor: '#f0eeeb', color: '#5a5a5a' }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ padding: '14px 0' }}>
+                <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 6 }}>FCM Token</p>
+                <p style={{ fontSize: 10, color: '#b0ada8', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                  {getFCMToken() || 'Not available'}
+                </p>
+              </div>
+            </>
+          )}
+        </Section>
+      )}
 
       {/* Save bar — only show if changed */}
       {(hasChanges || saved) && (
