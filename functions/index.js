@@ -97,15 +97,15 @@ exports.sendDueNotifications = onSchedule("* * * * *", async () => {
     // Send via ntfy if topic exists
     if (ntfyTopic) {
       try {
-        await fetch(`https://ntfy.sh/${ntfyTopic}`, {
+        await fetch(`https://ntfy.sh`, {
           method: "POST",
-          headers: {
-            "Title": "SavorCue",
-            "Tags": "fork_and_knife",
-            "Click": "https://savorcue.web.app/meal",
-            "Priority": "high",
-          },
-          body: "How full are you right now?",
+          body: JSON.stringify({
+            topic: ntfyTopic,
+            title: "SavorCue",
+            message: "How full are you right now?",
+            click: "https://savorcue.web.app/meal",
+            priority: 4,
+          }),
         });
       } catch {
         // ntfy unavailable

@@ -49,7 +49,7 @@ export default function OnboardingScreen({ onComplete }: Props) {
   const [testSent, setTestSent] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [topic, setTopic] = useState(() => {
     const stored = localStorage.getItem('savorcue_ntfy_topic');
-    return stored || `savorcue-${Math.random().toString(36).slice(2, 8)}`;
+    return stored || `savorcue-${Math.random().toString(36).slice(2, 10)}`;
   });
 
   const current = steps[step];
@@ -88,20 +88,24 @@ export default function OnboardingScreen({ onComplete }: Props) {
   };
 
   const sendTestNotification = async () => {
-    if (!topic) return;
+    if (!topic) { setTestSent('error'); return; }
     setTestSent('sending');
     try {
-      await fetch(`https://ntfy.sh/${topic}`, {
+      const res = await fetch(`https://ntfy.sh/${topic}`, {
         method: 'POST',
-        headers: {
-          'Title': 'SavorCue',
-          'Tags': 'white_check_mark',
-          'Click': 'https://savorcue.web.app/meal',
-          'Priority': 'high',
-        },
-        body: 'Test notification — if you see this, notifications are working!',
+        body: JSON.stringify({
+          topic: topic,
+          title: 'SavorCue',
+          message: 'Test notification — if you see this, notifications are working!',
+          click: 'https://savorcue.web.app/meal',
+          priority: 4,
+        }),
       });
-      setTestSent('sent');
+      if (res.ok) {
+        setTestSent('sent');
+      } else {
+        setTestSent('error');
+      }
     } catch {
       setTestSent('error');
     }
