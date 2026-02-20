@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyDwWpe7nZClO7F98uGScNYi0OS-gnY2O9c</string>
+	<key>GCM_SENDER_ID</key>
+	<string>607906099746</string>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:607906099746:web:e367d284149cd8038b107b</string>
+	<key>PROJECT_ID</key>
+	<string>savorcue</string>
+	<key>STORAGE_BUCKET</key>
+	<string>savorcue.firebasestorage.app</string>
+	<key>BUNDLE_ID</key>
+	<string>com.savorcue.app</string>
+</dict>
+</plist>
