@@ -10,37 +10,25 @@ import type {
   HealthyIndulgent,
 } from '../types';
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-5">
-      <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-1">
-        {title}
-      </h3>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function ChipRow({ label, options, value, onChange }: {
+function OptionRow({ label, options, value, onChange }: {
   label: string;
   options: { key: string; label: string }[];
   value: string;
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="py-3">
-      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-4 shadow-sm mb-3">
+      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">{label}</p>
       <div className="flex flex-wrap gap-2">
         {options.map((o) => (
           <button
             key={o.key}
-            onClick={() => onChange(o.key)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            onClick={() => onChange(value === o.key ? '' : o.key)}
+            style={value === o.key ? { backgroundColor: '#10b981', color: '#fff' } : undefined}
+            className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-95 ${
               value === o.key
-                ? 'bg-emerald-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                ? ''
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
             }`}
           >
             {o.label}
@@ -49,6 +37,23 @@ function ChipRow({ label, options, value, onChange }: {
       </div>
     </div>
   );
+}
+
+function fullnessLabel(value: number): string {
+  if (value <= 1) return 'Not hungry';
+  if (value <= 3) return 'A little hungry';
+  if (value === 4) return 'Somewhat hungry';
+  if (value === 5) return 'Hungry';
+  if (value <= 7) return 'Pretty hungry';
+  if (value <= 9) return 'Very hungry';
+  return 'Starving';
+}
+
+function fullnessColor(value: number): string {
+  if (value <= 3) return '#9ca3af';
+  if (value <= 5) return '#eab308';
+  if (value <= 7) return '#f97316';
+  return '#ef4444';
 }
 
 export default function PreMealScreen() {
@@ -78,6 +83,8 @@ export default function PreMealScreen() {
     navigate('/meal');
   };
 
+  const sliderActive = hungerBefore !== null;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 pt-6 pb-28 max-w-md mx-auto">
       {/* Header */}
@@ -91,33 +98,42 @@ export default function PreMealScreen() {
         </button>
       </div>
 
-      {/* Mandatory: hunger/fullness baseline */}
-      <Card title="How hungry or full are you?">
-        <div className="grid grid-cols-4 gap-2 mb-2">
-          {Array.from({ length: 11 }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setHungerBefore(i)}
-              style={hungerBefore === i ? { backgroundColor: '#10b981', color: '#fff' } : undefined}
-              className={`py-3 rounded-xl text-lg font-bold active:scale-95 transition-transform ${
-                hungerBefore === i
-                  ? 'ring-2 ring-emerald-400'
-                  : i <= 3
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                  : i <= 6
-                  ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
-                  : 'bg-orange-50 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
-              }`}
-            >
-              {i}
-            </button>
-          ))}
+      {/* Fullness slider */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl px-5 py-5 shadow-sm mb-5">
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+          How hungry are you right now?
+        </p>
+        <div className="flex items-baseline justify-between mb-4">
+          <span
+            className="text-3xl font-bold"
+            style={{ color: sliderActive ? fullnessColor(hungerBefore!) : '#9ca3af' }}
+          >
+            {sliderActive ? hungerBefore : '—'}
+          </span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {sliderActive ? fullnessLabel(hungerBefore!) : 'Slide to set'}
+          </span>
         </div>
-        <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 px-1 pb-1">
-          <span>Very hungry</span>
-          <span>Very full</span>
+        <input
+          type="range"
+          min={0}
+          max={10}
+          step={1}
+          value={hungerBefore ?? 5}
+          onChange={(e) => setHungerBefore(Number(e.target.value))}
+          className="w-full h-2 rounded-full appearance-none cursor-pointer"
+          style={{
+            background: sliderActive
+              ? `linear-gradient(to right, #d1d5db 0%, #eab308 40%, #f97316 70%, #ef4444 100%)`
+              : '#d1d5db',
+          }}
+        />
+        <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mt-2 px-0.5">
+          <span>Not hungry</span>
+          <span>Moderate</span>
+          <span>Starving</span>
         </div>
-      </Card>
+      </div>
 
       {/* Optional details */}
       {!showOptional ? (
@@ -128,81 +144,74 @@ export default function PreMealScreen() {
           + Add more details (optional)
         </button>
       ) : (
-        <>
-          <Card title="Meal Details">
-            <ChipRow
-              label="Meal mode"
-              options={[
-                { key: 'quick', label: 'Quick' },
-                { key: 'restaurant', label: 'Restaurant' },
-                { key: 'snack', label: 'Snack' },
-                { key: 'social', label: 'Social' },
-              ]}
-              value={mode}
-              onChange={(v) => setMode(v as MealMode)}
-            />
-            <div className="border-t border-gray-100 dark:border-gray-700" />
-            <ChipRow
-              label="Meal type"
-              options={[
-                { key: 'breakfast', label: 'Breakfast' },
-                { key: 'lunch', label: 'Lunch' },
-                { key: 'dinner', label: 'Dinner' },
-                { key: 'snack', label: 'Snack' },
-              ]}
-              value={mealType}
-              onChange={(v) => setMealType(v as MealType)}
-            />
-            <div className="border-t border-gray-100 dark:border-gray-700" />
-            <ChipRow
-              label="Where?"
-              options={[
-                { key: 'home', label: 'Home' },
-                { key: 'restaurant', label: 'Restaurant' },
-                { key: 'other', label: 'Other' },
-              ]}
-              value={location}
-              onChange={(v) => setLocation(v as LocationType)}
-            />
-            <div className="border-t border-gray-100 dark:border-gray-700" />
-            <ChipRow
-              label="Eating with?"
-              options={[
-                { key: 'alone', label: 'Alone' },
-                { key: 'with_people', label: 'With people' },
-              ]}
-              value={social}
-              onChange={(v) => setSocial(v as SocialType)}
-            />
-            <div className="border-t border-gray-100 dark:border-gray-700" />
-            <ChipRow
-              label="Meal vibe"
-              options={[
-                { key: 'healthy', label: 'Healthy' },
-                { key: 'mixed', label: 'Mixed' },
-                { key: 'indulgent', label: 'Indulgent' },
-              ]}
-              value={healthyIndulgent}
-              onChange={(v) => setHealthyIndulgent(v as HealthyIndulgent)}
-            />
-            <div className="border-t border-gray-100 dark:border-gray-700" />
-            <ChipRow
-              label="Alcohol?"
-              options={[
-                { key: 'yes', label: 'Yes' },
-                { key: 'no', label: 'No' },
-              ]}
-              value={alcohol === true ? 'yes' : alcohol === false ? 'no' : ''}
-              onChange={(v) => setAlcohol(v === 'yes')}
-            />
-          </Card>
+        <div className="mb-3">
+          <OptionRow
+            label="Meal mode"
+            options={[
+              { key: 'quick', label: 'Quick' },
+              { key: 'restaurant', label: 'Restaurant' },
+              { key: 'snack', label: 'Snack' },
+              { key: 'social', label: 'Social' },
+            ]}
+            value={mode}
+            onChange={(v) => setMode((v || 'quick') as MealMode)}
+          />
+          <OptionRow
+            label="What meal?"
+            options={[
+              { key: 'breakfast', label: 'Breakfast' },
+              { key: 'lunch', label: 'Lunch' },
+              { key: 'dinner', label: 'Dinner' },
+              { key: 'snack', label: 'Snack' },
+            ]}
+            value={mealType}
+            onChange={(v) => setMealType(v as MealType)}
+          />
+          <OptionRow
+            label="Where are you eating?"
+            options={[
+              { key: 'home', label: 'Home' },
+              { key: 'restaurant', label: 'Restaurant' },
+              { key: 'other', label: 'Somewhere else' },
+            ]}
+            value={location}
+            onChange={(v) => setLocation(v as LocationType)}
+          />
+          <OptionRow
+            label="Who are you with?"
+            options={[
+              { key: 'alone', label: 'Just me' },
+              { key: 'with_people', label: 'With others' },
+            ]}
+            value={social}
+            onChange={(v) => setSocial(v as SocialType)}
+          />
+          <OptionRow
+            label="How's the food?"
+            options={[
+              { key: 'healthy', label: 'Healthy' },
+              { key: 'mixed', label: 'Mixed' },
+              { key: 'indulgent', label: 'Indulgent' },
+            ]}
+            value={healthyIndulgent}
+            onChange={(v) => setHealthyIndulgent(v as HealthyIndulgent)}
+          />
+          <OptionRow
+            label="Drinking alcohol?"
+            options={[
+              { key: 'yes', label: 'Yes' },
+              { key: 'no', label: 'No' },
+            ]}
+            value={alcohol === true ? 'yes' : alcohol === false ? 'no' : ''}
+            onChange={(v) => setAlcohol(v === 'yes' ? true : v === 'no' ? false : null)}
+          />
           <button
             onClick={() => setShowOptional(false)}
-            className="text-sm text-gray-400 dark:text-gray-500 mb-5 block px-1"
+            className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-2 block px-1"
           >
             Hide details
           </button>
-        </>
+        </div>
       )}
 
       {/* Start button */}
@@ -210,15 +219,15 @@ export default function PreMealScreen() {
         <div className="max-w-md mx-auto">
           <button
             onClick={handleStart}
-            disabled={hungerBefore === null}
-            style={hungerBefore !== null ? { backgroundColor: '#10b981' } : undefined}
+            disabled={!sliderActive}
+            style={sliderActive ? { backgroundColor: '#10b981' } : undefined}
             className={`w-full font-semibold py-3.5 rounded-2xl text-lg active:scale-95 transition-all ${
-              hungerBefore !== null
+              sliderActive
                 ? 'text-white shadow-lg shadow-emerald-500/25'
                 : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
             }`}
           >
-            {hungerBefore !== null ? 'Start Meal' : 'Select fullness to start'}
+            {sliderActive ? 'Start Meal' : 'Set your fullness to start'}
           </button>
         </div>
       </div>
