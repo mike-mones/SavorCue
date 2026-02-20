@@ -24,7 +24,7 @@ async function initFCMToken(): Promise<void> {
     const messaging = getMessaging(getApp());
     // You need to generate a VAPID key in Firebase Console > Project Settings > Cloud Messaging
     fcmToken = await getToken(messaging, {
-      vapidKey: '', // Will be set after console setup
+      vapidKey: 'BBv5ledEIHpTOeinm4m7xkb4y3PDIvxsQTxTsWCjEK-xgULZIHVPaoJiYdhtE_J4dDv4NXA0Q85TBA3mEYVUbn8',
       serviceWorkerRegistration: await navigator.serviceWorker.register('/firebase-messaging-sw.js'),
     });
   } catch {
