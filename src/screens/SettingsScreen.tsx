@@ -1,9 +1,76 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context';
-import type { AppSettings, UnlockMethod, NotificationStyle } from '../types';
+import type { AppSettings, UnlockMethod } from '../types';
 import { DEFAULT_SETTINGS } from '../defaults';
 import { exportAllData, exportCSV } from '../db';
+
+function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!on)}
+      className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors ${
+        on
+          ? 'bg-emerald-500 border-emerald-500'
+          : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
+      }`}
+    >
+      <span
+        className={`inline-block h-6 w-6 rounded-full bg-white shadow-md transition-transform ${
+          on ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+      <span className="sr-only">{on ? 'On' : 'Off'}</span>
+    </button>
+  );
+}
+
+function Row({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between py-3">
+      <div className="flex-1 mr-4">
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</p>
+        {desc && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{desc}</p>}
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-6">
+      <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-1">
+        {title}
+      </h3>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl divide-y divide-gray-100 dark:divide-gray-700 px-4 shadow-sm">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function NumberInput({ value, onChange, min, max }: { value: number; onChange: (n: number) => void; min: number; max: number }) {
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => onChange(Math.max(min, value - (max > 100 ? 15 : 1)))}
+        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-lg font-bold flex items-center justify-center"
+      >
+        −
+      </button>
+      <span className="w-14 text-center text-sm font-mono font-semibold text-gray-900 dark:text-gray-100">
+        {value}
+      </span>
+      <button
+        onClick={() => onChange(Math.min(max, value + (max > 100 ? 15 : 1)))}
+        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-lg font-bold flex items-center justify-center"
+      >
+        +
+      </button>
+    </div>
+  );
+}
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useApp();
@@ -55,247 +122,190 @@ export default function SettingsScreen() {
     URL.revokeObjectURL(url);
   };
 
-  const chipClass = (selected: boolean) =>
-    `px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-      selected
-        ? 'bg-emerald-600 text-white'
-        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-    }`;
-
   const schedule = local.promptScheduleByRating;
-  const bands = ['0-2', '3-4', '5-6', '7', '8', '9-10'];
+
+  const unlockLabels: Record<UnlockMethod, string> = {
+    tap: 'Tap',
+    hold: 'Hold 2s',
+    type_code: 'Type code',
+  };
 
   return (
-    <div className="min-h-screen px-6 py-8 max-w-md mx-auto pb-24">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Settings</h2>
-        <button onClick={() => navigate('/')} className="text-sm text-gray-500 underline">
-          Back
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 pt-6 pb-28 max-w-md mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 px-1">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h2>
+        <button
+          onClick={() => navigate('/')}
+          className="text-emerald-600 dark:text-emerald-400 text-sm font-medium"
+        >
+          Done
         </button>
       </div>
 
-      {/* Prompt schedule */}
-      <section className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">
-          Prompt timing (seconds)
-        </h3>
-        {bands.map((band) => (
-          <div key={band} className="flex items-center justify-between mb-2">
-            <label className="text-sm text-gray-600 dark:text-gray-300 w-16">
-              Rating {band}
-            </label>
-            <input
-              type="number"
+      {/* Prompt Timing */}
+      <Card title="Prompt Timing">
+        {[
+          { band: '0-2', label: 'Fullness 0–2', desc: 'Not hungry yet' },
+          { band: '3-4', label: 'Fullness 3–4', desc: 'Getting there' },
+          { band: '5-6', label: 'Fullness 5–6', desc: 'Moderate' },
+          { band: '7', label: 'Fullness 7', desc: 'High' },
+          { band: '8', label: 'Fullness 8', desc: 'Very high' },
+          { band: '9-10', label: 'Fullness 9–10', desc: 'Triggers done flow' },
+        ].map(({ band, label, desc }) => (
+          <Row key={band} label={label} desc={`${desc} · ${schedule[band] ?? 0}s`}>
+            <NumberInput
+              value={schedule[band] ?? 0}
+              onChange={(v) => updateSchedule(band, v)}
               min={0}
               max={600}
-              value={schedule[band] ?? 0}
-              onChange={(e) => updateSchedule(band, Number(e.target.value))}
-              className="w-24 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-center outline-none focus:border-emerald-500"
             />
-          </div>
+          </Row>
         ))}
-      </section>
+      </Card>
 
       {/* Thresholds */}
-      <section className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Thresholds</h3>
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-sm text-gray-600 dark:text-gray-300">High fullness</label>
-          <input
-            type="number"
-            min={1}
-            max={10}
+      <Card title="Thresholds">
+        <Row label="High fullness" desc="Shows unlock prompt at this level">
+          <NumberInput
             value={local.highFullnessThreshold}
-            onChange={(e) => update('highFullnessThreshold', Number(e.target.value))}
-            className="w-20 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-center outline-none focus:border-emerald-500"
-          />
-        </div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-sm text-gray-600 dark:text-gray-300">Done threshold</label>
-          <input
-            type="number"
+            onChange={(v) => update('highFullnessThreshold', v)}
             min={1}
             max={10}
-            value={local.doneThreshold}
-            onChange={(e) => update('doneThreshold', Number(e.target.value))}
-            className="w-20 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-center outline-none focus:border-emerald-500"
           />
-        </div>
-      </section>
+        </Row>
+        <Row label="Done threshold" desc="Triggers 'you're done' at this level">
+          <NumberInput
+            value={local.doneThreshold}
+            onChange={(v) => update('doneThreshold', v)}
+            min={1}
+            max={10}
+          />
+        </Row>
+      </Card>
 
-      {/* Unlock method */}
-      <section className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Unlock method</h3>
-        <div className="flex gap-2 mb-3">
-          {(['tap', 'hold', 'type_code'] as UnlockMethod[]).map((m) => (
-            <button
-              key={m}
-              className={chipClass(local.unlockMethod === m)}
-              onClick={() => update('unlockMethod', m)}
-            >
-              {m === 'type_code' ? 'Type code' : m.charAt(0).toUpperCase() + m.slice(1)}
-            </button>
-          ))}
-        </div>
+      {/* Unlock */}
+      <Card title="Unlock to Continue">
+        <Row label="Method" desc="How to unlock after high fullness">
+          <div className="flex gap-1">
+            {(['tap', 'hold', 'type_code'] as UnlockMethod[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => update('unlockMethod', m)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  local.unlockMethod === m
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                {unlockLabels[m]}
+              </button>
+            ))}
+          </div>
+        </Row>
         {local.unlockMethod === 'type_code' && (
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 dark:text-gray-300">Code:</label>
+          <Row label="Unlock code" desc="Word to type to continue eating">
             <input
               type="text"
               value={local.unlockCode}
               onChange={(e) => update('unlockCode', e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 uppercase font-mono outline-none focus:border-emerald-500"
+              className="w-24 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center text-sm font-mono uppercase outline-none focus:border-emerald-500"
               maxLength={20}
             />
-          </div>
+          </Row>
         )}
-      </section>
+        <Row label="Unlock window" desc="Seconds of eating granted after unlock">
+          <NumberInput
+            value={local.unlockWindowSec}
+            onChange={(v) => update('unlockWindowSec', v)}
+            min={10}
+            max={300}
+          />
+        </Row>
+      </Card>
 
-      {/* Durations */}
-      <section className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Durations (seconds)</h3>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-600 dark:text-gray-300">Unlock window</label>
-            <input
-              type="number"
-              min={10}
-              max={300}
-              value={local.unlockWindowSec}
-              onChange={(e) => update('unlockWindowSec', Number(e.target.value))}
-              className="w-24 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-center outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-600 dark:text-gray-300">Pause duration</label>
-            <input
-              type="number"
-              min={10}
-              max={600}
-              value={local.doneFlowPauseSec}
-              onChange={(e) => update('doneFlowPauseSec', Number(e.target.value))}
-              className="w-24 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-center outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-600 dark:text-gray-300">Re-prompt if ignored</label>
-            <input
-              type="number"
-              min={5}
-              max={120}
-              value={local.ignoredPromptRepromptSec}
-              onChange={(e) => update('ignoredPromptRepromptSec', Number(e.target.value))}
-              className="w-24 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-center outline-none focus:border-emerald-500"
-            />
-          </div>
-        </div>
-      </section>
+      {/* Timing */}
+      <Card title="Timers">
+        <Row label="Pause duration" desc="Length of the 'take a break' pause">
+          <NumberInput
+            value={local.doneFlowPauseSec}
+            onChange={(v) => update('doneFlowPauseSec', v)}
+            min={10}
+            max={600}
+          />
+        </Row>
+        <Row label="Re-prompt delay" desc="Seconds before re-asking if ignored">
+          <NumberInput
+            value={local.ignoredPromptRepromptSec}
+            onChange={(v) => update('ignoredPromptRepromptSec', v)}
+            min={5}
+            max={120}
+          />
+        </Row>
+      </Card>
 
-      {/* Notification style */}
-      <section className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Notification style</h3>
-        <div className="flex gap-2">
-          {(['in_app', 'subtle', 'strong'] as NotificationStyle[]).map((n) => (
-            <button
-              key={n}
-              className={chipClass(local.notificationStyle === n)}
-              onClick={() => update('notificationStyle', n)}
-            >
-              {n.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Social mode */}
-      <section className="mb-8">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Social mode</h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Less aggressive re-prompts</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => update('socialMode', true)}
-            className={chipClass(local.socialMode === true)}
-          >
-            On
-          </button>
-          <button
-            onClick={() => update('socialMode', false)}
-            className={chipClass(local.socialMode === false)}
-          >
-            Off
-          </button>
-        </div>
-      </section>
+      {/* Behavior */}
+      <Card title="Behavior">
+        <Row label="Social mode" desc="Gentler prompts when eating with others">
+          <Toggle on={local.socialMode} onChange={(v) => update('socialMode', v)} />
+        </Row>
+      </Card>
 
       {/* Home Assistant */}
-      <section className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Home Assistant</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-300">Webhook URL</label>
-            <input
-              type="url"
-              value={local.haWebhookUrl ?? ''}
-              onChange={(e) => update('haWebhookUrl', e.target.value)}
-              className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-sm outline-none focus:border-emerald-500"
-              placeholder="https://your-ha-instance/api/webhook/..."
-            />
-          </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-300 mb-2 block">Mirror events to HA</label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => update('haEventMirroring', true)}
-                className={chipClass(local.haEventMirroring === true)}
-              >
-                On
-              </button>
-              <button
-                onClick={() => update('haEventMirroring', false)}
-                className={chipClass(local.haEventMirroring !== true)}
-              >
-                Off
-              </button>
-            </div>
-          </div>
+      <Card title="Home Assistant">
+        <div className="py-3">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Webhook URL</p>
+          <input
+            type="url"
+            value={local.haWebhookUrl ?? ''}
+            onChange={(e) => update('haWebhookUrl', e.target.value)}
+            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-emerald-500"
+            placeholder="https://your-ha-instance/api/webhook/..."
+          />
         </div>
-      </section>
+        <Row label="Mirror events" desc="Send meal events to Home Assistant">
+          <Toggle on={!!local.haEventMirroring} onChange={(v) => update('haEventMirroring', v)} />
+        </Row>
+      </Card>
 
-      {/* Export */}
-      <section className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Export data</h3>
-        <div className="flex gap-3">
+      {/* Data */}
+      <Card title="Data">
+        <div className="py-3 flex gap-3">
           <button
             onClick={handleExportJSON}
-            className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 rounded-lg text-sm font-medium"
+            className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2.5 rounded-lg text-sm font-medium active:scale-95 transition-transform"
           >
             Export JSON
           </button>
           <button
             onClick={handleExportCSV}
-            className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 rounded-lg text-sm font-medium"
+            className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2.5 rounded-lg text-sm font-medium active:scale-95 transition-transform"
           >
             Export CSV
           </button>
         </div>
-      </section>
-
-      {/* Actions */}
-      <div className="fixed bottom-0 left-0 right-0 px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 max-w-md mx-auto">
-        <div className="flex gap-3">
-          <button
-            onClick={handleSave}
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl active:scale-95 transition-transform"
-          >
-            {saved ? '✓ Saved' : 'Save'}
-          </button>
+        <div className="py-3">
           <button
             onClick={handleReset}
-            className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-6 py-3 rounded-xl text-sm"
+            className="w-full text-red-500 dark:text-red-400 text-sm font-medium py-1"
           >
-            Reset
+            Reset all settings to defaults
+          </button>
+        </div>
+      </Card>
+
+      {/* Save bar */}
+      <div className="fixed bottom-0 left-0 right-0 px-4 py-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-t border-gray-200 dark:border-gray-700">
+        <div className="max-w-md mx-auto">
+          <button
+            onClick={handleSave}
+            className={`w-full font-semibold py-3.5 rounded-2xl text-lg active:scale-95 transition-all ${
+              saved
+                ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+                : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25'
+            }`}
+          >
+            {saved ? '✓ Saved' : 'Save Settings'}
           </button>
         </div>
       </div>
