@@ -30,9 +30,10 @@ const steps = [
   {
     title: 'Step 3: Test it',
     subtitle: 'Let\'s make sure it works.',
-    body: 'Tap the button below to send yourself a test notification through ntfy. You should see it appear on your phone within a few seconds.',
+    body: 'Make sure the topic below matches what you subscribed to in ntfy, then tap the button to send a test notification.',
     action: null,
     testNotification: true,
+    topicEditable: true,
     note: 'Tip: Make sure ntfy notifications are enabled in iPhone Settings → Notifications → ntfy. Turn on Sounds, Badges, and Lock Screen.',
   },
   {
@@ -183,6 +184,17 @@ export default function OnboardingScreen({ onComplete }: Props) {
         {/* Test notification button */}
         {'testNotification' in current && current.testNotification && (
           <div style={{ marginBottom: 16 }}>
+            {'topicEditable' in current && current.topicEditable && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <span style={{ fontSize: 13, color: '#8a8a8a', whiteSpace: 'nowrap' }}>Topic:</span>
+                <input
+                  type="text"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
+                  style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e8e6e3', fontSize: 14, fontFamily: 'monospace', outline: 'none', backgroundColor: '#fff' }}
+                />
+              </div>
+            )}
             <button
               onClick={sendTestNotification}
               disabled={testSent === 'sending'}
