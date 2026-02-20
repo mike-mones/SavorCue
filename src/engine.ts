@@ -14,7 +14,7 @@ import { getIntervalForRating } from './defaults';
 import { saveSession, saveEvent, getEventsForSession, getActiveSession, deleteSession } from './db';
 import { mirrorEvent } from './ha';
 import { syncSessionToCloud, syncEventToCloud, deleteSessionFromCloud } from './cloud';
-import { showNotification } from './notifications';
+import { showNotification, schedulePushNotification, cancelPushNotifications } from './notifications';
 
 const ACTIVE_SESSION_KEY = 'savorcue_active_session';
 
@@ -236,6 +236,11 @@ export class SessionEngine {
       lastFullnessRating: null,
     };
 
+    // Schedule push notification
+    if (this.uid && firstInterval > 0) {
+      schedulePushNotification(this.uid, session.id, firstInterval).catch(() => {});
+    }
+
     this.notify();
     return this.active;
   }
@@ -292,6 +297,12 @@ export class SessionEngine {
         nextPromptAt: schedulePromptAt(interval),
         promptShownAt: null,
       };
+
+      // Schedule push notification
+      if (this.uid && interval > 0) {
+        cancelPushNotifications(this.uid, this.active.session.id).catch(() => {});
+        schedulePushNotification(this.uid, this.active.session.id, interval).catch(() => {});
+      }
     }
 
     this.notify();
@@ -366,6 +377,12 @@ export class SessionEngine {
         unlockWindowEndsAt: schedulePromptAt(this.settings.unlockWindowSec),
         promptShownAt: null,
       };
+
+      // Schedule push
+      if (this.uid) {
+        cancelPushNotifications(this.uid, this.active.session.id).catch(() => {});
+        schedulePushNotification(this.uid, this.active.session.id, this.settings.unlockWindowSec).catch(() => {});
+      }
     } else {
       const deniedEvent = createEvent(this.active.session.id, 'unlock_denied');
       await logEvent(deniedEvent, this.settings, this.uid);
@@ -448,6 +465,8 @@ export class SessionEngine {
     const result = { ...session };
     this.active = null;
     clearPersistedActiveSession();
+    // Cancel any pending push notifications
+    if (this.uid) cancelPushNotifications(this.uid, session.id).catch(() => {});
     this.notify();
     return result;
   }
