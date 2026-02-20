@@ -28,14 +28,11 @@ const steps = [
     action: null,
   },
   {
-    title: 'Step 3: Install the Shortcut',
-    subtitle: 'Auto-opens SavorCue when you get a notification.',
-    body: 'This iOS Shortcut will automatically open SavorCue in your browser when you tap a notification from ntfy. After installing, go to Shortcuts → Automation → tap the SavorCue automation → make sure "Run Immediately" is on.',
-    action: {
-      label: 'Install Shortcut',
-      url: 'https://www.icloud.com/shortcuts/savorcue-open', // placeholder
-    },
-    note: 'Note: You may need to create this automation manually. In Shortcuts → Automation → "When I receive a notification from ntfy" → Open URL → https://savorcue.web.app/meal',
+    title: 'Step 3: Test it out',
+    subtitle: 'Make sure notifications work.',
+    body: 'Open the ntfy app and confirm you see your topic listed. When SavorCue sends a check-in reminder, you\'ll get a notification from ntfy. Tap the notification to open SavorCue directly.',
+    action: null,
+    note: 'Tip: Make sure ntfy notifications are enabled in iPhone Settings → Notifications → ntfy. Turn on Sounds, Badges, and Lock Screen.',
   },
   {
     title: "You're all set!",
@@ -47,6 +44,7 @@ const steps = [
 
 export default function OnboardingScreen({ onComplete }: Props) {
   const [step, setStep] = useState(0);
+  const [copied, setCopied] = useState(false);
   const [topic, setTopic] = useState(() => {
     const stored = localStorage.getItem('savorcue_ntfy_topic');
     return stored || `savorcue-${Math.random().toString(36).slice(2, 8)}`;
@@ -70,8 +68,21 @@ export default function OnboardingScreen({ onComplete }: Props) {
     onComplete();
   };
 
-  const copyTopic = () => {
-    navigator.clipboard.writeText(topic).catch(() => {});
+  const copyTopic = async () => {
+    try {
+      // Try modern clipboard API
+      await navigator.clipboard.writeText(topic);
+    } catch {
+      // Fallback: create a temporary input
+      const input = document.createElement('input');
+      input.value = topic;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -112,7 +123,9 @@ export default function OnboardingScreen({ onComplete }: Props) {
             >
               {topic}
             </div>
-            <p style={{ fontSize: 12, color: '#b0ada8', textAlign: 'center', marginTop: 8 }}>Tap to copy</p>
+            <p style={{ fontSize: 12, color: copied ? '#0d9488' : '#b0ada8', textAlign: 'center', marginTop: 8, fontWeight: copied ? 600 : 400 }}>
+              {copied ? 'Copied!' : 'Tap to copy'}
+            </p>
             <div style={{ marginTop: 12 }}>
               <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 6 }}>Or choose your own:</p>
               <input
@@ -161,11 +174,18 @@ export default function OnboardingScreen({ onComplete }: Props) {
         >
           {isLast ? "Let's go" : 'Next'}
         </button>
-        {!isLast && (
-          <button onClick={handleSkip} style={{ width: '100%', fontSize: 14, color: '#b0ada8', padding: '8px 0' }}>
-            Skip setup
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          {step > 0 && (
+            <button onClick={() => setStep(step - 1)} style={{ fontSize: 14, color: '#8a8a8a', padding: '8px 0' }}>
+              Back
+            </button>
+          )}
+          {!isLast && (
+            <button onClick={handleSkip} style={{ fontSize: 14, color: '#b0ada8', padding: '8px 0' }}>
+              Skip setup
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
