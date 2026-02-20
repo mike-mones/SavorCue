@@ -25,6 +25,7 @@ export interface MealContext {
 
 export interface FinalSummary {
   finalFullness?: number | null;
+  feelingAfter?: number | null;  // 0-10, 0=terrible, 10=great
   overshot?: boolean | null;
   discomfort?: number | null;
   amountLeft?: AmountLeft | null;
