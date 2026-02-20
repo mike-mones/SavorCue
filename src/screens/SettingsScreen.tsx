@@ -216,15 +216,20 @@ export default function SettingsScreen() {
           </div>
           <button
             onClick={() => update('socialMode', !local.socialMode)}
-            className={`w-12 h-7 rounded-full transition-colors relative ${
+            className={`w-16 h-8 rounded-full transition-colors relative ${
               local.socialMode ? 'bg-emerald-600' : 'bg-gray-300 dark:bg-gray-600'
             }`}
           >
             <span
-              className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
-                local.socialMode ? 'translate-x-5' : 'translate-x-0.5'
+              className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                local.socialMode ? 'translate-x-9' : 'translate-x-1'
               }`}
             />
+            <span className={`absolute text-[10px] font-bold top-1.5 ${
+              local.socialMode ? 'left-2 text-white' : 'right-2 text-gray-500 dark:text-gray-400'
+            }`}>
+              {local.socialMode ? 'ON' : 'OFF'}
+            </span>
           </button>
         </div>
       </section>
@@ -247,15 +252,20 @@ export default function SettingsScreen() {
             <label className="text-sm text-gray-600 dark:text-gray-300">Mirror events to HA</label>
             <button
               onClick={() => update('haEventMirroring', !local.haEventMirroring)}
-              className={`w-12 h-7 rounded-full transition-colors relative ${
+              className={`w-16 h-8 rounded-full transition-colors relative ${
                 local.haEventMirroring ? 'bg-emerald-600' : 'bg-gray-300 dark:bg-gray-600'
               }`}
             >
               <span
-                className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
-                  local.haEventMirroring ? 'translate-x-5' : 'translate-x-0.5'
+                className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                  local.haEventMirroring ? 'translate-x-9' : 'translate-x-1'
                 }`}
               />
+              <span className={`absolute text-[10px] font-bold top-1.5 ${
+                local.haEventMirroring ? 'left-2 text-white' : 'right-2 text-gray-500 dark:text-gray-400'
+              }`}>
+                {local.haEventMirroring ? 'ON' : 'OFF'}
+              </span>
             </button>
           </div>
         </div>
