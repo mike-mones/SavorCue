@@ -157,7 +157,7 @@ export default function PreMealScreen() {
               type="range" min={0} max={10} step={1}
               value={fullness ?? 5}
               onChange={(e) => setFullness(Number(e.target.value))}
-              style={{ position: 'relative', width: '100%', height: 32, background: 'transparent', zIndex: 1 }}
+              style={{ position: 'relative', width: '100%', height: 32, background: 'transparent', zIndex: 1, '--thumb-color': numColor } as React.CSSProperties}
             />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#b0ada8', marginTop: 6 }}>
@@ -245,7 +245,7 @@ export default function PreMealScreen() {
       </div>
 
       {/* Start */}
-      <div style={{ position: 'fixed', bottom: 72, left: 0, right: 0, padding: '10px 20px', backgroundColor: 'rgba(250,249,247,0.92)', backdropFilter: 'blur(20px)' }}>
+      <div style={{ position: 'fixed', bottom: 72, left: 0, right: 0, padding: '10px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <button
             onClick={handleStart}

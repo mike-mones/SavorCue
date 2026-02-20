@@ -43,8 +43,8 @@ export default function TabBar() {
                   boxShadow: '0 4px 14px rgba(13,148,136,0.35)',
                 }}
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                  <polygon points="5 3 19 12 5 21 5 3"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                  <polygon points="6 3 20 12 6 21"/>
                 </svg>
               </button>
             );
