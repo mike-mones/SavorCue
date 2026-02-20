@@ -28,10 +28,11 @@ const steps = [
     action: null,
   },
   {
-    title: 'Step 3: Test it out',
-    subtitle: 'Make sure notifications work.',
-    body: 'Open the ntfy app and confirm you see your topic listed. When SavorCue sends a check-in reminder, you\'ll get a notification from ntfy. Tap the notification to open SavorCue directly.',
+    title: 'Step 3: Test it',
+    subtitle: 'Let\'s make sure it works.',
+    body: 'Tap the button below to send yourself a test notification through ntfy. You should see it appear on your phone within a few seconds.',
     action: null,
+    testNotification: true,
     note: 'Tip: Make sure ntfy notifications are enabled in iPhone Settings → Notifications → ntfy. Turn on Sounds, Badges, and Lock Screen.',
   },
   {
@@ -45,6 +46,7 @@ const steps = [
 export default function OnboardingScreen({ onComplete }: Props) {
   const [step, setStep] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [testSent, setTestSent] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [topic, setTopic] = useState(() => {
     const stored = localStorage.getItem('savorcue_ntfy_topic');
     return stored || `savorcue-${Math.random().toString(36).slice(2, 8)}`;
@@ -83,6 +85,26 @@ export default function OnboardingScreen({ onComplete }: Props) {
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const sendTestNotification = async () => {
+    if (!topic) return;
+    setTestSent('sending');
+    try {
+      await fetch(`https://ntfy.sh/${topic}`, {
+        method: 'POST',
+        headers: {
+          'Title': 'SavorCue',
+          'Tags': 'white_check_mark',
+          'Click': 'https://savorcue.web.app/meal',
+          'Priority': 'high',
+        },
+        body: 'Test notification — if you see this, notifications are working!',
+      });
+      setTestSent('sent');
+    } catch {
+      setTestSent('error');
+    }
   };
 
   return (
@@ -152,6 +174,35 @@ export default function OnboardingScreen({ onComplete }: Props) {
           >
             {current.action.label}
           </a>
+        )}
+
+        {/* Test notification button */}
+        {'testNotification' in current && current.testNotification && (
+          <div style={{ marginBottom: 16 }}>
+            <button
+              onClick={sendTestNotification}
+              disabled={testSent === 'sending'}
+              style={{
+                width: '100%', padding: '16px 0', borderRadius: 14, fontSize: 16, fontWeight: 700,
+                backgroundColor: testSent === 'sent' ? '#d1fae5' : testSent === 'error' ? '#fee2e2' : '#0d9488',
+                color: testSent === 'sent' ? '#065f46' : testSent === 'error' ? '#991b1b' : '#fff',
+                marginBottom: 8, transition: 'all 0.2s',
+              }}
+            >
+              {testSent === 'idle' && 'Send test notification'}
+              {testSent === 'sending' && 'Sending...'}
+              {testSent === 'sent' && 'Sent! Check your phone.'}
+              {testSent === 'error' && 'Failed — check your topic name'}
+            </button>
+            {testSent === 'sent' && (
+              <button
+                onClick={() => setTestSent('idle')}
+                style={{ width: '100%', fontSize: 14, color: '#8a8a8a', padding: '4px 0' }}
+              >
+                Send another
+              </button>
+            )}
+          </div>
         )}
 
         {/* Note */}
