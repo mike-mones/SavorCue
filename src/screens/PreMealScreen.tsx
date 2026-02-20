@@ -40,17 +40,17 @@ function OptionRow({ label, options, value, onChange }: {
 }
 
 function fullnessLabel(value: number): string {
-  if (value <= 1) return 'Not hungry';
-  if (value <= 3) return 'A little hungry';
-  if (value === 4) return 'Somewhat hungry';
-  if (value === 5) return 'Hungry';
-  if (value <= 7) return 'Pretty hungry';
-  if (value <= 9) return 'Very hungry';
-  return 'Starving';
+  if (value === 0) return 'Empty';
+  if (value <= 2) return 'Pretty hungry';
+  if (value <= 4) return 'A little hungry';
+  if (value === 5) return 'Neutral';
+  if (value <= 7) return 'Satisfied';
+  if (value <= 9) return 'Full';
+  return 'Stuffed';
 }
 
 function fullnessColor(value: number): string {
-  if (value <= 3) return '#9ca3af';
+  if (value <= 2) return '#10b981';
   if (value <= 5) return '#eab308';
   if (value <= 7) return '#f97316';
   return '#ef4444';
@@ -101,7 +101,7 @@ export default function PreMealScreen() {
       {/* Fullness slider */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl px-5 py-5 shadow-sm mb-5">
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-          How hungry are you right now?
+          How full are you right now?
         </p>
         <div className="flex items-baseline justify-between mb-4">
           <span
@@ -124,14 +124,14 @@ export default function PreMealScreen() {
           className="w-full h-2 rounded-full appearance-none cursor-pointer"
           style={{
             background: sliderActive
-              ? `linear-gradient(to right, #d1d5db 0%, #eab308 40%, #f97316 70%, #ef4444 100%)`
+              ? `linear-gradient(to right, #10b981 0%, #eab308 45%, #f97316 70%, #ef4444 100%)`
               : '#d1d5db',
           }}
         />
         <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mt-2 px-0.5">
-          <span>Not hungry</span>
-          <span>Moderate</span>
-          <span>Starving</span>
+          <span>Empty</span>
+          <span>Neutral</span>
+          <span>Stuffed</span>
         </div>
       </div>
 
