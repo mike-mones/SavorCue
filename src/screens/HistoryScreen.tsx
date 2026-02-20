@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getAllSessions, deleteSession } from '../db';
 import type { MealSession } from '../types';
 
 export default function HistoryScreen() {
-  const navigate = useNavigate();
   const [sessions, setSessions] = useState<MealSession[]>([]);
 
   useEffect(() => {
@@ -37,13 +35,8 @@ export default function HistoryScreen() {
   };
 
   return (
-    <div className="min-h-screen px-6 py-8 max-w-md mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">History</h2>
-        <button onClick={() => navigate('/')} className="text-sm text-gray-500 underline">
-          Back
-        </button>
-      </div>
+    <div style={{ backgroundColor: '#0f0f0f', minHeight: '100vh', color: '#fafafa', padding: '20px 20px 120px', maxWidth: 480, margin: '0 auto' }}>
+      <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>History</h2>
 
       {sessions.length === 0 ? (
         <p className="text-center text-gray-500 dark:text-gray-400 py-16">

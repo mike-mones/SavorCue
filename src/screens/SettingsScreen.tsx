@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context';
 import type { AppSettings, UnlockMethod } from '../types';
 import { DEFAULT_SETTINGS } from '../defaults';
@@ -72,7 +71,6 @@ function NumberInput({ value, onChange, min, max }: { value: number; onChange: (
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useApp();
-  const navigate = useNavigate();
   const [local, setLocal] = useState<AppSettings>({ ...settings });
   const [saved, setSaved] = useState(false);
 
@@ -130,15 +128,8 @@ export default function SettingsScreen() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 pt-6 pb-28 max-w-md mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 px-1">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h2>
-        <button
-          onClick={() => navigate('/')}
-          className="text-emerald-600 dark:text-emerald-400 text-sm font-medium"
-        >
-          Done
-        </button>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(15,15,15,0.9)', backdropFilter: 'blur(20px)', padding: '16px 0', marginBottom: 16 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 800 }}>Settings</h2>
       </div>
 
       {/* Prompt Timing */}

@@ -1,8 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context';
 import { AuthProvider, useAuth } from './authContext';
 import LoginScreen from './screens/LoginScreen';
-import HomeScreen from './screens/HomeScreen';
 import PreMealScreen from './screens/PreMealScreen';
 import ActiveMealScreen from './screens/ActiveMealScreen';
 import EndMealScreen from './screens/EndMealScreen';
@@ -10,29 +9,38 @@ import SummaryScreen from './screens/SummaryScreen';
 import AnalyticsScreen from './screens/AnalyticsScreen';
 import HistoryScreen from './screens/HistoryScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import TabBar from './components/TabBar';
 
 function AppRoutes() {
-  const { ready } = useApp();
+  const { ready, active } = useApp();
 
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500 dark:text-gray-400 text-lg">Loading...</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f0f0f', color: '#555' }}>
+        <p>Loading...</p>
       </div>
     );
   }
 
+  // If there's an active meal, redirect to it
+  if (active && !['/meal', '/end-meal'].includes(window.location.pathname)) {
+    return <Navigate to="/meal" replace />;
+  }
+
   return (
-    <Routes>
-      <Route path="/" element={<HomeScreen />} />
-      <Route path="/pre-meal" element={<PreMealScreen />} />
-      <Route path="/meal" element={<ActiveMealScreen />} />
-      <Route path="/end-meal" element={<EndMealScreen />} />
-      <Route path="/summary" element={<SummaryScreen />} />
-      <Route path="/analytics" element={<AnalyticsScreen />} />
-      <Route path="/history" element={<HistoryScreen />} />
-      <Route path="/settings" element={<SettingsScreen />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<Navigate to="/analytics" replace />} />
+        <Route path="/pre-meal" element={<PreMealScreen />} />
+        <Route path="/meal" element={<ActiveMealScreen />} />
+        <Route path="/end-meal" element={<EndMealScreen />} />
+        <Route path="/summary" element={<SummaryScreen />} />
+        <Route path="/analytics" element={<AnalyticsScreen />} />
+        <Route path="/history" element={<HistoryScreen />} />
+        <Route path="/settings" element={<SettingsScreen />} />
+      </Routes>
+      <TabBar />
+    </>
   );
 }
 
