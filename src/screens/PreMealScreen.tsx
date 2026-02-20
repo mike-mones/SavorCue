@@ -2,233 +2,222 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context';
 import type {
-  MealMode,
   MealContext,
+  MealMode,
   LocationType,
   SocialType,
   MealType,
   HealthyIndulgent,
 } from '../types';
 
-function OptionRow({ label, options, value, onChange }: {
+function fullnessLabel(v: number): string {
+  if (v === 0) return 'Completely empty';
+  if (v <= 2) return 'Pretty hungry';
+  if (v <= 4) return 'Slightly hungry';
+  if (v === 5) return 'Neutral';
+  if (v <= 7) return 'Satisfied';
+  if (v <= 9) return 'Full';
+  return 'Stuffed';
+}
+
+function fullnessEmoji(v: number): string {
+  if (v <= 2) return '🟢';
+  if (v <= 5) return '🟡';
+  if (v <= 7) return '🟠';
+  return '🔴';
+}
+
+function PickerGroup({ label, options, value, onChange }: {
   label: string;
-  options: { key: string; label: string }[];
+  options: { key: string; label: string; icon?: string }[];
   value: string;
   onChange: (v: string) => void;
 }) {
   return (
     <div>
-      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-1">{label}</p>
-      <div className="flex flex-wrap gap-2">
-        {options.map((o) => (
-          <button
-            key={o.key}
-            onClick={() => onChange(value === o.key ? '' : o.key)}
-            style={{
-              backgroundColor: value === o.key ? '#10b981' : '#e5e7eb',
-              color: value === o.key ? '#fff' : '#374151',
-            }}
-            className="px-5 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95 shadow-sm"
-          >
-            {o.label}
-          </button>
-        ))}
+      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2.5">{label}</p>
+      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(options.length, 3)}, 1fr)` }}>
+        {options.map((o) => {
+          const selected = value === o.key;
+          return (
+            <button
+              key={o.key}
+              onClick={() => onChange(selected ? '' : o.key)}
+              style={{
+                backgroundColor: selected ? '#10b981' : '#f3f4f6',
+                color: selected ? '#fff' : '#4b5563',
+                border: selected ? '2px solid #059669' : '2px solid transparent',
+              }}
+              className="py-3.5 px-3 rounded-2xl text-sm font-semibold transition-all active:scale-[0.96] text-center"
+            >
+              {o.icon && <span className="block text-lg mb-0.5">{o.icon}</span>}
+              {o.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
-}
-
-function fullnessLabel(value: number): string {
-  if (value === 0) return 'Empty';
-  if (value <= 2) return 'Pretty hungry';
-  if (value <= 4) return 'A little hungry';
-  if (value === 5) return 'Neutral';
-  if (value <= 7) return 'Satisfied';
-  if (value <= 9) return 'Full';
-  return 'Stuffed';
-}
-
-function fullnessColor(value: number): string {
-  if (value <= 2) return '#10b981';
-  if (value <= 5) return '#eab308';
-  if (value <= 7) return '#f97316';
-  return '#ef4444';
 }
 
 export default function PreMealScreen() {
   const { engine } = useApp();
   const navigate = useNavigate();
 
-  const [hungerBefore, setHungerBefore] = useState<number | null>(null);
-  const [mode, setMode] = useState<MealMode | ''>('');
+  const [fullness, setFullness] = useState<number | null>(null);
   const [location, setLocation] = useState<LocationType | ''>('');
   const [social, setSocial] = useState<SocialType | ''>('');
   const [mealType, setMealType] = useState<MealType | ''>('');
   const [healthyIndulgent, setHealthyIndulgent] = useState<HealthyIndulgent | ''>('');
   const [alcohol, setAlcohol] = useState<boolean | null>(null);
-  const [showOptional, setShowOptional] = useState(false);
 
   const handleStart = async () => {
-    if (hungerBefore === null) return;
+    if (fullness === null) return;
     const context: MealContext = {
       location: location || null,
       social: social || null,
       mealType: mealType || null,
-      hungerBefore,
+      hungerBefore: fullness,
       healthyIndulgent: healthyIndulgent || null,
       alcohol,
     };
-    await engine.startMeal((mode || 'quick') as MealMode, context);
+    const mode: MealMode = location === 'restaurant' ? 'restaurant' : social === 'with_people' ? 'social' : mealType === 'snack' ? 'snack' : 'quick';
+    await engine.startMeal(mode, context);
     navigate('/meal');
   };
 
-  const sliderActive = hungerBefore !== null;
+  const active = fullness !== null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 pt-6 pb-28 max-w-md mx-auto">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 px-1">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Before you eat</h2>
+      <div className="sticky top-0 z-10 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md px-5 pt-5 pb-3 flex items-center justify-between">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">New meal</h2>
         <button
           onClick={() => navigate('/')}
-          className="text-emerald-600 dark:text-emerald-400 text-sm font-medium"
+          className="text-sm font-medium text-gray-400 dark:text-gray-500"
         >
           Cancel
         </button>
       </div>
 
-      {/* Fullness slider */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl px-5 py-5 shadow-sm mb-5">
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-          How full are you right now?
-        </p>
-        <div className="flex items-baseline justify-between mb-4">
-          <span
-            className="text-3xl font-bold"
-            style={{ color: sliderActive ? fullnessColor(hungerBefore!) : '#9ca3af' }}
-          >
-            {sliderActive ? hungerBefore : '—'}
-          </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {sliderActive ? fullnessLabel(hungerBefore!) : 'Slide to set'}
-          </span>
+      <div className="px-5 pb-32 max-w-md mx-auto space-y-6">
+        {/* Fullness slider */}
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+            How full are you right now?
+          </p>
+          <div className="flex items-center gap-4 mb-4">
+            <span className="text-5xl font-bold tabular-nums" style={{ color: active ? '#10b981' : '#d1d5db' }}>
+              {active ? fullness : '—'}
+            </span>
+            <div className="flex-1">
+              {active && (
+                <>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{fullnessEmoji(fullness!)} {fullnessLabel(fullness!)}</span>
+                </>
+              )}
+              {!active && <span className="text-sm text-gray-400">Drag the slider below</span>}
+            </div>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-3 rounded-full" style={{
+              background: active
+                ? 'linear-gradient(to right, #10b981 0%, #84cc16 25%, #eab308 50%, #f97316 75%, #ef4444 100%)'
+                : '#e5e7eb',
+            }} />
+            <input
+              type="range"
+              min={0}
+              max={10}
+              step={1}
+              value={fullness ?? 5}
+              onChange={(e) => setFullness(Number(e.target.value))}
+              className="relative w-full h-8 appearance-none bg-transparent cursor-pointer z-10"
+              style={{ WebkitAppearance: 'none' }}
+            />
+          </div>
+          <div className="flex justify-between text-[11px] text-gray-400 dark:text-gray-500 mt-1 px-0.5 font-medium">
+            <span>Empty</span>
+            <span>Neutral</span>
+            <span>Stuffed</span>
+          </div>
         </div>
-        <input
-          type="range"
-          min={0}
-          max={10}
-          step={1}
-          value={hungerBefore ?? 5}
-          onChange={(e) => setHungerBefore(Number(e.target.value))}
-          className="w-full h-2 rounded-full appearance-none cursor-pointer"
-          style={{
-            background: sliderActive
-              ? `linear-gradient(to right, #10b981 0%, #eab308 45%, #f97316 70%, #ef4444 100%)`
-              : '#d1d5db',
-          }}
+
+        {/* Meal type */}
+        <PickerGroup
+          label="What are you eating?"
+          options={[
+            { key: 'breakfast', label: 'Breakfast', icon: '🌅' },
+            { key: 'lunch', label: 'Lunch', icon: '☀️' },
+            { key: 'dinner', label: 'Dinner', icon: '🌙' },
+            { key: 'snack', label: 'Snack', icon: '🍿' },
+          ]}
+          value={mealType}
+          onChange={(v) => setMealType(v as MealType)}
         />
-        <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mt-2 px-0.5">
-          <span>Empty</span>
-          <span>Neutral</span>
-          <span>Stuffed</span>
-        </div>
+
+        {/* Location */}
+        <PickerGroup
+          label="Where are you?"
+          options={[
+            { key: 'home', label: 'Home', icon: '🏠' },
+            { key: 'restaurant', label: 'Out', icon: '🍽️' },
+            { key: 'other', label: 'Other', icon: '📍' },
+          ]}
+          value={location}
+          onChange={(v) => setLocation(v as LocationType)}
+        />
+
+        {/* Social */}
+        <PickerGroup
+          label="Who's with you?"
+          options={[
+            { key: 'alone', label: 'Solo', icon: '🧘' },
+            { key: 'with_people', label: 'With others', icon: '👥' },
+          ]}
+          value={social}
+          onChange={(v) => setSocial(v as SocialType)}
+        />
+
+        {/* Food vibe */}
+        <PickerGroup
+          label="How's the food?"
+          options={[
+            { key: 'healthy', label: 'Healthy', icon: '🥗' },
+            { key: 'mixed', label: 'Mixed', icon: '🍱' },
+            { key: 'indulgent', label: 'Indulgent', icon: '🍕' },
+          ]}
+          value={healthyIndulgent}
+          onChange={(v) => setHealthyIndulgent(v as HealthyIndulgent)}
+        />
+
+        {/* Alcohol */}
+        <PickerGroup
+          label="Drinking?"
+          options={[
+            { key: 'yes', label: 'Yes', icon: '🍷' },
+            { key: 'no', label: 'No', icon: '💧' },
+          ]}
+          value={alcohol === true ? 'yes' : alcohol === false ? 'no' : ''}
+          onChange={(v) => setAlcohol(v === 'yes' ? true : v === 'no' ? false : null)}
+        />
       </div>
 
-      {/* Optional details */}
-      {!showOptional ? (
-        <button
-          onClick={() => setShowOptional(true)}
-          className="w-full bg-white dark:bg-gray-800 rounded-2xl px-4 py-4 shadow-sm text-sm text-emerald-600 dark:text-emerald-400 font-medium text-left mb-5"
-        >
-          + Add more details (optional)
-        </button>
-      ) : (
-        <div className="mb-3">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm px-4 py-5 space-y-5">
-            <OptionRow
-            label="Meal mode"
-            options={[
-              { key: 'quick', label: 'Quick' },
-              { key: 'restaurant', label: 'Restaurant' },
-              { key: 'snack', label: 'Snack' },
-              { key: 'social', label: 'Social' },
-            ]}
-            value={mode}
-            onChange={(v) => setMode((v || 'quick') as MealMode)}
-          />
-          <OptionRow
-            label="What meal?"
-            options={[
-              { key: 'breakfast', label: 'Breakfast' },
-              { key: 'lunch', label: 'Lunch' },
-              { key: 'dinner', label: 'Dinner' },
-              { key: 'snack', label: 'Snack' },
-            ]}
-            value={mealType}
-            onChange={(v) => setMealType(v as MealType)}
-          />
-          <OptionRow
-            label="Where are you eating?"
-            options={[
-              { key: 'home', label: 'Home' },
-              { key: 'restaurant', label: 'Restaurant' },
-              { key: 'other', label: 'Somewhere else' },
-            ]}
-            value={location}
-            onChange={(v) => setLocation(v as LocationType)}
-          />
-          <OptionRow
-            label="Who are you with?"
-            options={[
-              { key: 'alone', label: 'Just me' },
-              { key: 'with_people', label: 'With others' },
-            ]}
-            value={social}
-            onChange={(v) => setSocial(v as SocialType)}
-          />
-          <OptionRow
-            label="How's the food?"
-            options={[
-              { key: 'healthy', label: 'Healthy' },
-              { key: 'mixed', label: 'Mixed' },
-              { key: 'indulgent', label: 'Indulgent' },
-            ]}
-            value={healthyIndulgent}
-            onChange={(v) => setHealthyIndulgent(v as HealthyIndulgent)}
-          />
-          <OptionRow
-            label="Drinking alcohol?"
-            options={[
-              { key: 'yes', label: 'Yes' },
-              { key: 'no', label: 'No' },
-            ]}
-            value={alcohol === true ? 'yes' : alcohol === false ? 'no' : ''}
-            onChange={(v) => setAlcohol(v === 'yes' ? true : v === 'no' ? false : null)}
-          />
-          </div>
-          <button
-            onClick={() => setShowOptional(false)}
-            className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-2 block px-1"
-          >
-            Hide details
-          </button>
-        </div>
-      )}
-
       {/* Start button */}
-      <div className="fixed bottom-0 left-0 right-0 px-4 py-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-t border-gray-200 dark:border-gray-700">
+      <div className="fixed bottom-0 inset-x-0 p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50">
         <div className="max-w-md mx-auto">
           <button
             onClick={handleStart}
-            disabled={!sliderActive}
-            style={sliderActive ? { backgroundColor: '#10b981' } : undefined}
-            className={`w-full font-semibold py-3.5 rounded-2xl text-lg active:scale-95 transition-all ${
-              sliderActive
-                ? 'text-white shadow-lg shadow-emerald-500/25'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+            disabled={!active}
+            style={active ? { backgroundColor: '#10b981' } : undefined}
+            className={`w-full font-bold py-4 rounded-2xl text-lg transition-all active:scale-[0.97] ${
+              active
+                ? 'text-white shadow-xl shadow-emerald-500/30'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
             }`}
           >
-            {sliderActive ? 'Start Meal' : 'Set your fullness to start'}
+            {active ? 'Start Meal' : 'Set your fullness to begin'}
           </button>
         </div>
       </div>

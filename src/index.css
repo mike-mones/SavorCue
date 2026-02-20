@@ -26,16 +26,17 @@ button {
 
 input[type='range'] {
   -webkit-appearance: none;
-  height: 8px;
+  height: 12px;
   border-radius: 999px;
-  @apply bg-gray-300 dark:bg-gray-700;
+  background: transparent;
 }
 
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: #059669;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(5, 150, 105, 0.3);
   cursor: pointer;
 }
