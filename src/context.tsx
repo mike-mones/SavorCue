@@ -3,6 +3,9 @@ import { SessionEngine } from './engine';
 import type { ActiveSession, AppSettings } from './types';
 import { loadSettings, saveSettings } from './db';
 import { DEFAULT_SETTINGS } from './defaults';
+import { useAuth } from './authContext';
+import { syncSettingsToCloud, getSettingsFromCloud } from './cloud';
+import { requestNotificationPermission } from './notifications';
 
 interface AppContextValue {
   engine: SessionEngine;
@@ -15,6 +18,7 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [active, setActive] = useState<ActiveSession | null>(null);
   const [ready, setReady] = useState(false);
@@ -24,16 +28,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const loaded = await loadSettings();
+      // Load local settings first
+      let loaded = await loadSettings();
+
+      // If signed in, try to load from cloud and merge
+      if (user) {
+        const cloudSettings = await getSettingsFromCloud(user.uid);
+        if (cloudSettings) loaded = cloudSettings;
+        engineRef.current.setUid(user.uid);
+      } else {
+        engineRef.current.setUid(null);
+      }
+
       if (!mounted) return;
       setSettings(loaded);
       engineRef.current.updateSettings(loaded);
       await engineRef.current.restore();
       setActive(engineRef.current.getActive());
+
+      // Request notification permission
+      requestNotificationPermission();
+
       setReady(true);
     })();
     return () => { mounted = false; };
-  }, []);
+  }, [user]);
 
   // Subscribe to engine changes
   useEffect(() => {
@@ -53,9 +72,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateSettingsHandler = useCallback(async (s: AppSettings) => {
     await saveSettings(s);
+    if (user) {
+      syncSettingsToCloud(user.uid, s).catch(() => {});
+    }
     setSettings(s);
     engineRef.current.updateSettings(s);
-  }, []);
+  }, [user]);
 
   return (
     <AppContext.Provider

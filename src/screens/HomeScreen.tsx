@@ -1,9 +1,11 @@
 import { useApp } from '../context';
+import { useAuth } from '../authContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 export default function HomeScreen() {
   const { active } = useApp();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   // If there's an active session, go to it
@@ -17,6 +19,18 @@ export default function HomeScreen() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8">
+      {/* User info */}
+      {user && (
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          {user.photoURL && (
+            <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full" referrerPolicy="no-referrer" />
+          )}
+          <button onClick={logout} className="text-xs text-gray-400 dark:text-gray-500 underline">
+            Sign out
+          </button>
+        </div>
+      )}
+
       <h1 className="text-4xl font-bold mb-2 text-emerald-600 dark:text-emerald-400">
         SavorCue
       </h1>

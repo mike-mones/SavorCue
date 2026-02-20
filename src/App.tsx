@@ -1,5 +1,7 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useApp } from './context';
+import { AuthProvider, useAuth } from './authContext';
+import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 import PreMealScreen from './screens/PreMealScreen';
 import ActiveMealScreen from './screens/ActiveMealScreen';
@@ -34,14 +36,36 @@ function AppRoutes() {
   );
 }
 
+function AuthGate() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <p className="text-gray-500 dark:text-gray-400 text-lg">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  return (
+    <AppProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <AppRoutes />
+      </div>
+    </AppProvider>
+  );
+}
+
 export default function App() {
   return (
     <HashRouter>
-      <AppProvider>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <AppRoutes />
-        </div>
-      </AppProvider>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
     </HashRouter>
   );
 }

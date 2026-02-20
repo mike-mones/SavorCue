@@ -13,6 +13,8 @@ import type {
 import { getIntervalForRating } from './defaults';
 import { saveSession, saveEvent, getEventsForSession, getActiveSession, deleteSession } from './db';
 import { mirrorEvent } from './ha';
+import { syncSessionToCloud, syncEventToCloud, deleteSessionFromCloud } from './cloud';
+import { showNotification } from './notifications';
 
 const ACTIVE_SESSION_KEY = 'savorcue_active_session';
 
@@ -56,8 +58,10 @@ function createEvent(
 async function logEvent(
   event: MealEvent,
   settings: AppSettings,
+  uid: string | null,
 ): Promise<void> {
   await saveEvent(event);
+  if (uid) syncEventToCloud(uid, event).catch(() => {});
   await mirrorEvent(settings, event.type, {
     sessionId: event.sessionId,
     fullnessRating: event.fullnessRating,
@@ -86,9 +90,14 @@ export class SessionEngine {
   private active: ActiveSession | null = null;
   private settings: AppSettings;
   private listeners: Set<() => void> = new Set();
+  private uid: string | null = null;
 
   constructor(settings: AppSettings) {
     this.settings = settings;
+  }
+
+  setUid(uid: string | null): void {
+    this.uid = uid;
   }
 
   updateSettings(settings: AppSettings): void {
@@ -205,11 +214,12 @@ export class SessionEngine {
     };
 
     await saveSession(session);
+    if (this.uid) syncSessionToCloud(this.uid, session).catch(() => {});
 
     const startEvent = createEvent(session.id, 'session_started', {
       metadata: { mode, context },
     });
-    await logEvent(startEvent, this.settings);
+    await logEvent(startEvent, this.settings, this.uid);
 
     const firstInterval = getIntervalForRating(0, this.settings);
 
@@ -240,8 +250,10 @@ export class SessionEngine {
     this.active.timer.nextPromptAt = null;
 
     const event = createEvent(this.active.session.id, 'prompt_shown');
-    await logEvent(event, this.settings);
+    await logEvent(event, this.settings, this.uid);
     this.active.events.push(event);
+
+    showNotification('SavorCue', 'How full are you right now?');
 
     this.notify();
   }
@@ -263,7 +275,7 @@ export class SessionEngine {
       nextIntervalSec: interval,
       responseDelayMs: responseDelay,
     });
-    await logEvent(event, this.settings);
+    await logEvent(event, this.settings, this.uid);
     this.active.events.push(event);
     this.active.lastFullnessRating = rating;
 
@@ -291,7 +303,7 @@ export class SessionEngine {
     if (!this.active) return;
 
     const event = createEvent(this.active.session.id, 'prompt_ignored');
-    await logEvent(event, this.settings);
+    await logEvent(event, this.settings, this.uid);
     this.active.events.push(event);
 
     // Re-prompt after reprompt interval
@@ -314,7 +326,7 @@ export class SessionEngine {
     this.active.state = 'active_high_fullness_unlock';
 
     const event = createEvent(this.active.session.id, 'unlock_prompt_shown');
-    await logEvent(event, this.settings);
+    await logEvent(event, this.settings, this.uid);
     this.active.events.push(event);
   }
 
@@ -324,7 +336,7 @@ export class SessionEngine {
     const attemptEvent = createEvent(this.active.session.id, 'unlock_attempt', {
       metadata: { method: this.settings.unlockMethod },
     });
-    await logEvent(attemptEvent, this.settings);
+    await logEvent(attemptEvent, this.settings, this.uid);
     this.active.events.push(attemptEvent);
 
     let success = false;
@@ -343,7 +355,7 @@ export class SessionEngine {
 
     if (success) {
       const successEvent = createEvent(this.active.session.id, 'unlock_success');
-      await logEvent(successEvent, this.settings);
+      await logEvent(successEvent, this.settings, this.uid);
       this.active.events.push(successEvent);
 
       // Grant unlock window
@@ -356,7 +368,7 @@ export class SessionEngine {
       };
     } else {
       const deniedEvent = createEvent(this.active.session.id, 'unlock_denied');
-      await logEvent(deniedEvent, this.settings);
+      await logEvent(deniedEvent, this.settings, this.uid);
       this.active.events.push(deniedEvent);
     }
 
@@ -372,7 +384,7 @@ export class SessionEngine {
     this.active.state = 'done_flow';
 
     const event = createEvent(this.active.session.id, 'done_flow_shown');
-    await logEvent(event, this.settings);
+    await logEvent(event, this.settings, this.uid);
     this.active.events.push(event);
   }
 
@@ -386,7 +398,7 @@ export class SessionEngine {
     this.active.timer.nextPromptAt = null;
 
     const event = createEvent(this.active.session.id, 'pause_started');
-    await logEvent(event, this.settings);
+    await logEvent(event, this.settings, this.uid);
     this.active.events.push(event);
 
     this.notify();
@@ -400,7 +412,7 @@ export class SessionEngine {
     this.active.timer.promptShownAt = new Date().toISOString();
 
     const event = createEvent(this.active.session.id, 'pause_ended');
-    await logEvent(event, this.settings);
+    await logEvent(event, this.settings, this.uid);
     this.active.events.push(event);
 
     this.notify();
@@ -426,11 +438,12 @@ export class SessionEngine {
     if (summary) session.finalSummary = summary;
 
     await saveSession(session);
+    if (this.uid) syncSessionToCloud(this.uid, session).catch(() => {});
 
     const event = createEvent(session.id, 'session_ended', {
       metadata: { summary },
     });
-    await logEvent(event, this.settings);
+    await logEvent(event, this.settings, this.uid);
 
     const result = { ...session };
     this.active = null;
@@ -446,6 +459,7 @@ export class SessionEngine {
     this.active.session.status = 'abandoned';
     this.active.session.endedAt = new Date().toISOString();
     await saveSession(this.active.session);
+    if (this.uid) syncSessionToCloud(this.uid, this.active.session).catch(() => {});
     this.active = null;
     clearPersistedActiveSession();
     this.notify();
@@ -459,6 +473,7 @@ export class SessionEngine {
     this.active = null;
     clearPersistedActiveSession();
     await deleteSession(id);
+    if (this.uid) deleteSessionFromCloud(this.uid, id).catch(() => {});
     this.notify();
   }
 
