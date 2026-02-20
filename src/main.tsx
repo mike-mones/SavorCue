@@ -9,10 +9,10 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// Register service worker for PWA cache management
+// Register single service worker for both PWA caching and FCM
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then((reg) => {
-    // Check for updates every 60 seconds
-    setInterval(() => reg.update(), 60000);
+  navigator.serviceWorker.register('/firebase-messaging-sw.js').then((reg) => {
+    // Check for updates every 30 seconds
+    setInterval(() => reg.update(), 30000);
   }).catch(() => {});
 }

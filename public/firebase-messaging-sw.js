@@ -1,5 +1,41 @@
 /* eslint-env serviceworker */
 /* global firebase */
+
+// === PWA Cache Management (network-first) ===
+const CACHE_VERSION = 'savorcue-v2';
+
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  // Skip firebase/google API calls from caching
+  if (request.url.includes('googleapis.com') || request.url.includes('gstatic.com')) return;
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
+  );
+});
+
+// === Firebase Cloud Messaging ===
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
