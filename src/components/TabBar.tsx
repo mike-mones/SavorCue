@@ -23,9 +23,9 @@ export default function TabBar() {
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
       backgroundColor: '#fff',
       boxShadow: '0 -1px 12px rgba(0,0,0,0.06)',
-      paddingBottom: 'env(safe-area-inset-bottom, 6px)',
+      paddingBottom: 'env(safe-area-inset-bottom, 16px)',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', maxWidth: 480, margin: '0 auto', padding: '6px 0 4px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', maxWidth: 480, margin: '0 auto', padding: '10px 0 8px' }}>
         {tabs.map((tab) => {
           const isStart = tab.key === 'start';
           const isActive = current === tab.path;
