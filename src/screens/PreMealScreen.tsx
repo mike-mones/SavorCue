@@ -28,7 +28,7 @@ function Chips({ label, options, value, onChange }: {
 }) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-widest mb-2.5" style={{ color: '#888' }}>{label}</p>
+      <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.5, color: '#8a8a8a', marginBottom: 10 }}>{label}</p>
       <div className="flex gap-2">
         {options.map((o) => {
           const sel = value === o.key;
@@ -38,13 +38,12 @@ function Chips({ label, options, value, onChange }: {
               onClick={() => onChange(sel ? '' : o.key)}
               style={{
                 flex: 1,
-                padding: '14px 0',
-                borderRadius: 14,
-                fontSize: 14,
+                padding: '13px 0',
+                borderRadius: 12,
+                fontSize: 13,
                 fontWeight: 600,
-                backgroundColor: sel ? '#22c55e' : '#1a1a1a',
-                color: sel ? '#000' : '#aaa',
-                border: sel ? 'none' : '1px solid #2a2a2a',
+                backgroundColor: sel ? '#0d9488' : '#f0eeeb',
+                color: sel ? '#fff' : '#5a5a5a',
                 transition: 'all 0.15s',
               }}
             >
@@ -86,24 +85,24 @@ export default function PreMealScreen() {
   const active = fullness !== null;
 
   return (
-    <div style={{ backgroundColor: '#0f0f0f', minHeight: '100vh', color: '#fafafa' }}>
+    <div style={{ backgroundColor: '#faf9f7', minHeight: '100vh', color: '#1a1a1a' }}>
       {/* Header */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(15,15,15,0.9)', backdropFilter: 'blur(20px)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(250,249,247,0.92)', backdropFilter: 'blur(20px)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>New meal</h2>
-        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: '#666' }}>Cancel</button>
+        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: '#b0ada8' }}>Cancel</button>
       </div>
 
       <div style={{ padding: '0 20px 140px', maxWidth: 480, margin: '0 auto' }}>
         {/* Fullness */}
-        <div style={{ backgroundColor: '#1a1a1a', borderRadius: 20, padding: '24px', marginBottom: 24 }}>
-          <p className="text-xs font-medium uppercase tracking-widest mb-4" style={{ color: '#888' }}>
+        <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.5, color: '#8a8a8a', marginBottom: 16 }}>
             How full are you?
           </p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
-            <span style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: active ? '#22c55e' : '#333' }}>
-              {active ? fullness : '—'}
+            <span style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: active ? '#0d9488' : '#ddd' }}>
+              {active ? fullness : '\u2014'}
             </span>
-            <span style={{ fontSize: 14, color: '#666' }}>
+            <span style={{ fontSize: 14, color: '#8a8a8a' }}>
               {active ? fullnessLabel(fullness!) : 'Drag to set'}
             </span>
           </div>
@@ -112,8 +111,8 @@ export default function PreMealScreen() {
               position: 'absolute', inset: '0 0', top: '50%', transform: 'translateY(-50%)',
               height: 6, borderRadius: 999,
               background: active
-                ? 'linear-gradient(to right, #22c55e 0%, #84cc16 25%, #eab308 50%, #f97316 75%, #ef4444 100%)'
-                : '#2a2a2a',
+                ? 'linear-gradient(to right, #0d9488 0%, #84cc16 25%, #eab308 50%, #f97316 75%, #ef4444 100%)'
+                : '#e8e6e3',
             }} />
             <input
               type="range" min={0} max={10} step={1}
@@ -122,7 +121,7 @@ export default function PreMealScreen() {
               style={{ position: 'relative', width: '100%', height: 32, background: 'transparent', zIndex: 1 }}
             />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555', marginTop: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#b0ada8', marginTop: 6 }}>
             <span>Empty</span><span>Neutral</span><span>Stuffed</span>
           </div>
         </div>
@@ -182,7 +181,7 @@ export default function PreMealScreen() {
       </div>
 
       {/* Start */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 20px', paddingBottom: 28, backgroundColor: 'rgba(15,15,15,0.85)', backdropFilter: 'blur(20px)', borderTop: '1px solid #1a1a1a' }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 20px', paddingBottom: 28, backgroundColor: 'rgba(250,249,247,0.9)', backdropFilter: 'blur(20px)', borderTop: '1px solid #f0eeeb' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <button
             onClick={handleStart}
@@ -193,8 +192,8 @@ export default function PreMealScreen() {
               borderRadius: 16,
               fontSize: 17,
               fontWeight: 700,
-              backgroundColor: active ? '#22c55e' : '#1a1a1a',
-              color: active ? '#000' : '#444',
+              backgroundColor: active ? '#0d9488' : '#e8e6e3',
+              color: active ? '#fff' : '#b0ada8',
               transition: 'all 0.2s',
             }}
           >

@@ -9,6 +9,7 @@ import SummaryScreen from './screens/SummaryScreen';
 import AnalyticsScreen from './screens/AnalyticsScreen';
 import HistoryScreen from './screens/HistoryScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import ProfileScreen from './screens/ProfileScreen';
 import TabBar from './components/TabBar';
 
 function AppRoutes() {
@@ -38,6 +39,7 @@ function AppRoutes() {
         <Route path="/analytics" element={<AnalyticsScreen />} />
         <Route path="/history" element={<HistoryScreen />} />
         <Route path="/settings" element={<SettingsScreen />} />
+        <Route path="/profile" element={<ProfileScreen />} />
       </Routes>
       <TabBar />
     </>
@@ -61,7 +63,7 @@ function AuthGate() {
 
   return (
     <AppProvider>
-      <div style={{ minHeight: '100vh', backgroundColor: '#0f0f0f' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#faf9f7' }}>
         <AppRoutes />
       </div>
     </AppProvider>

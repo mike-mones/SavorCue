@@ -8,7 +8,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   return (
     <button
       onClick={() => onChange(!on)}
-      style={{ backgroundColor: on ? '#10b981' : '#9ca3af' }}
+      style={{ backgroundColor: on ? '#0d9488' : '#d4d2ce' }}
       className="relative inline-flex h-9 w-16 shrink-0 items-center rounded-full transition-colors"
     >
       <span
@@ -127,9 +127,9 @@ export default function SettingsScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 pt-6 pb-28 max-w-md mx-auto">
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(15,15,15,0.9)', backdropFilter: 'blur(20px)', padding: '16px 0', marginBottom: 16 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 800 }}>Settings</h2>
+    <div style={{ backgroundColor: '#faf9f7', minHeight: '100vh', padding: '0 16px 120px', maxWidth: 480, margin: '0 auto' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(250,249,247,0.92)', backdropFilter: 'blur(20px)', padding: '20px 0 12px' }}>
+        <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a1a' }}>Settings</h2>
       </div>
 
       {/* Prompt Timing */}
@@ -284,15 +284,16 @@ export default function SettingsScreen() {
       </Card>
 
       {/* Save bar */}
-      <div className="fixed bottom-0 left-0 right-0 px-4 py-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-t border-gray-200 dark:border-gray-700">
-        <div className="max-w-md mx-auto">
+      <div style={{ position: 'fixed', bottom: 80, left: 0, right: 0, padding: '12px 16px', backgroundColor: 'rgba(250,249,247,0.92)', backdropFilter: 'blur(20px)' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <button
             onClick={handleSave}
-            className={`w-full font-semibold py-3.5 rounded-2xl text-lg active:scale-95 transition-all ${
-              saved
-                ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
-                : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25'
-            }`}
+            style={{
+              width: '100%', padding: '14px 0', borderRadius: 14, fontSize: 16, fontWeight: 700,
+              backgroundColor: saved ? '#e6f7f2' : '#0d9488',
+              color: saved ? '#0d7377' : '#fff',
+              transition: 'all 0.2s',
+            }}
           >
             {saved ? '✓ Saved' : 'Save Settings'}
           </button>

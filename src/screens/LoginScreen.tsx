@@ -4,21 +4,22 @@ export default function LoginScreen() {
   const { signInWithGoogle } = useAuth();
 
   return (
-    <div style={{ backgroundColor: '#0f0f0f', minHeight: '100vh', color: '#fafafa', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
-      <div style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <div style={{ backgroundColor: '#faf9f7', minHeight: '100vh', color: '#1a1a1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
+      <div style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: '#0d9488', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
         </svg>
       </div>
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>SavorCue</h1>
-      <p style={{ fontSize: 14, color: '#666', marginBottom: 40 }}>Mindful meal pacing</p>
+      <p style={{ fontSize: 14, color: '#8a8a8a', marginBottom: 40 }}>Mindful meal pacing</p>
 
       <button
         onClick={signInWithGoogle}
         style={{
-          width: '100%', maxWidth: 360, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-          padding: '16px 24px', borderRadius: 16, fontSize: 16, fontWeight: 600,
-          backgroundColor: '#1a1a1a', color: '#fafafa', border: '1px solid #2a2a2a',
+          width: '100%', maxWidth: 340, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+          padding: '16px 24px', borderRadius: 16, fontSize: 15, fontWeight: 600,
+          backgroundColor: '#fff', color: '#1a1a1a', border: '1px solid #e8e6e3',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         }}
       >
         <svg width="18" height="18" viewBox="0 0 48 48">
@@ -30,7 +31,7 @@ export default function LoginScreen() {
         Sign in with Google
       </button>
 
-      <p style={{ fontSize: 12, color: '#444', marginTop: 24, textAlign: 'center', maxWidth: 280 }}>
+      <p style={{ fontSize: 12, color: '#b0ada8', marginTop: 24, textAlign: 'center', maxWidth: 260 }}>
         Sign in to sync your meals and settings across devices.
       </p>
     </div>

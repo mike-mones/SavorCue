@@ -11,27 +11,27 @@ export default function AnalyticsScreen() {
 
   if (!data) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f0f0f', color: '#555' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#faf9f7', color: '#8a8a8a' }}>
         <p>Loading...</p>
       </div>
     );
   }
 
   const StatCard = ({ label, value }: { label: string; value: string }) => (
-    <div style={{ backgroundColor: '#1a1a1a', borderRadius: 16, padding: 16 }}>
-      <p style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{label}</p>
-      <p style={{ fontSize: 24, fontWeight: 800, color: '#fafafa' }}>{value}</p>
+    <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+      <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 24, fontWeight: 800, color: '#1a1a1a' }}>{value}</p>
     </div>
   );
 
   return (
-    <div style={{ backgroundColor: '#0f0f0f', minHeight: '100vh', color: '#fafafa', padding: '20px 20px 120px', maxWidth: 480, margin: '0 auto' }}>
-      <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Analytics</h2>
+    <div style={{ backgroundColor: '#faf9f7', minHeight: '100vh', color: '#1a1a1a', padding: '24px 20px 120px', maxWidth: 480, margin: '0 auto' }}>
+      <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Insights</h2>
 
       {data.totalMeals === 0 ? (
         <div style={{ textAlign: 'center', paddingTop: 60 }}>
-          <p style={{ fontSize: 16, color: '#666', marginBottom: 8 }}>No meals tracked yet</p>
-          <p style={{ fontSize: 14, color: '#444' }}>Start your first meal to see analytics!</p>
+          <p style={{ fontSize: 16, color: '#8a8a8a', marginBottom: 8 }}>No meals tracked yet</p>
+          <p style={{ fontSize: 14, color: '#b0ada8' }}>Start your first meal to see insights!</p>
         </div>
       ) : (
         <>
@@ -42,27 +42,27 @@ export default function AnalyticsScreen() {
             <StatCard label="Overshot rate" value={`${Math.round(data.overshotRate * 100)}%`} />
           </div>
 
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Context</h3>
-          <div style={{ backgroundColor: '#1a1a1a', borderRadius: 16, padding: 16, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 11, fontWeight: 700, color: '#8a8a8a', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>Context</h3>
+          <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
             {[
               ['Home overshoot', `${Math.round(data.contextBreakdown.homeOvershotRate * 100)}%`],
               ['Restaurant overshoot', `${Math.round(data.contextBreakdown.restaurantOvershotRate * 100)}%`],
               ['Solo overshoot', `${Math.round(data.contextBreakdown.aloneOvershotRate * 100)}%`],
               ['With others overshoot', `${Math.round(data.contextBreakdown.withPeopleOvershotRate * 100)}%`],
             ].map(([label, value]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #222' }}>
-                <span style={{ fontSize: 14, color: '#888' }}>{label}</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#fafafa' }}>{value}</span>
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0eeeb' }}>
+                <span style={{ fontSize: 14, color: '#8a8a8a' }}>{label}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>{value}</span>
               </div>
             ))}
           </div>
 
           {data.recommendations.length > 0 && (
             <>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Insights</h3>
+              <h3 style={{ fontSize: 11, fontWeight: 700, color: '#8a8a8a', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 }}>Insights</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {data.recommendations.map((rec, i) => (
-                  <div key={i} style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 12, padding: 14, fontSize: 13, color: '#4ade80' }}>
+                  <div key={i} style={{ backgroundColor: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.15)', borderRadius: 12, padding: 14, fontSize: 13, color: '#0d7377' }}>
                     {rec}
                   </div>
                 ))}

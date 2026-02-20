@@ -35,53 +35,41 @@ export default function HistoryScreen() {
   };
 
   return (
-    <div style={{ backgroundColor: '#0f0f0f', minHeight: '100vh', color: '#fafafa', padding: '20px 20px 120px', maxWidth: 480, margin: '0 auto' }}>
+    <div style={{ backgroundColor: '#faf9f7', minHeight: '100vh', color: '#1a1a1a', padding: '24px 20px 120px', maxWidth: 480, margin: '0 auto' }}>
       <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>History</h2>
 
       {sessions.length === 0 ? (
-        <p className="text-center text-gray-500 dark:text-gray-400 py-16">
-          No meals tracked yet
-        </p>
+        <div style={{ textAlign: 'center', paddingTop: 60 }}>
+          <p style={{ fontSize: 16, color: '#8a8a8a' }}>No meals tracked yet</p>
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {sessions.map((s) => (
-            <div
-              key={s.id}
-              className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm"
-            >
-              <div className="flex justify-between items-start mb-1">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {formatDate(s.startedAt)}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      s.status === 'ended'
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
-                        : s.status === 'abandoned'
-                        ? 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                        : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'
-                    }`}
-                  >
+            <div key={s.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: '#8a8a8a' }}>{formatDate(s.startedAt)}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 8,
+                    backgroundColor: s.status === 'ended' ? '#e6f7f2' : '#f0eeeb',
+                    color: s.status === 'ended' ? '#0d7377' : '#8a8a8a',
+                  }}>
                     {s.status}
                   </span>
-                  <button
-                    onClick={() => handleDelete(s.id)}
-                    className="text-xs text-red-400 hover:text-red-600 dark:text-red-500 dark:hover:text-red-300"
-                  >
+                  <button onClick={() => handleDelete(s.id)} style={{ fontSize: 12, color: '#d4756b' }}>
                     Delete
                   </button>
                 </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-700 dark:text-gray-200 capitalize">{s.mode}</span>
-                <span className="text-gray-500 dark:text-gray-400">{duration(s)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+                <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{s.mode}</span>
+                <span style={{ color: '#8a8a8a' }}>{duration(s)}</span>
               </div>
               {s.finalSummary?.finalFullness != null && (
-                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <div style={{ fontSize: 13, color: '#8a8a8a', marginTop: 4 }}>
                   Fullness: {s.finalSummary.finalFullness}/10
                   {s.finalSummary.overshot && (
-                    <span className="text-orange-500 ml-2">• overshot</span>
+                    <span style={{ color: '#e6813e', marginLeft: 8 }}>overshot</span>
                   )}
                 </div>
               )}
