@@ -8,9 +8,29 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   return (
     <button
       onClick={() => onChange(!on)}
-      style={{ width: 52, height: 30, borderRadius: 15, backgroundColor: on ? '#0d9488' : '#d4d2ce', position: 'relative', transition: 'background-color 0.2s' }}
+      style={{
+        width: 52,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: on ? '#0d9488' : '#d4d2ce',
+        position: 'relative',
+        transition: 'background-color 0.2s',
+        flexShrink: 0,
+        display: 'block',
+        padding: 0,
+      }}
     >
-      <span style={{ position: 'absolute', top: 3, width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.15)', transition: 'transform 0.2s', transform: on ? 'translateX(24px)' : 'translateX(3px)' }} />
+      <div style={{
+        position: 'absolute',
+        top: 2,
+        left: on ? 22 : 2,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#fff',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        transition: 'left 0.2s',
+      }} />
     </button>
   );
 }
