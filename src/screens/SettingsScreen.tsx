@@ -228,8 +228,22 @@ export default function SettingsScreen() {
         </SettingRow>
       </Section>
 
-      {/* Behavior */}
-      <Section title="Behavior">
+      {/* Notifications */}
+      <Section title="Notifications">
+        <div style={{ padding: '14px 0', borderBottom: '1px solid #f0eeeb' }}>
+          <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Push notifications via ntfy</p>
+          <p style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 10 }}>Install the free "ntfy" app from the App Store, then subscribe to your topic below.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 13, color: '#8a8a8a', whiteSpace: 'nowrap' }}>ntfy.sh/</span>
+            <input
+              type="text"
+              value={local.ntfyTopic ?? ''}
+              onChange={(e) => update('ntfyTopic', e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
+              style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e8e6e3', fontSize: 13, outline: 'none', backgroundColor: '#faf9f7', fontFamily: 'monospace' }}
+              placeholder="savorcue-myname"
+            />
+          </div>
+        </div>
         <SettingRow label="Social mode" desc="Gentler prompts with others">
           <Toggle on={local.socialMode} onChange={(v) => update('socialMode', v)} />
         </SettingRow>

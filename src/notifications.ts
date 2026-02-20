@@ -76,15 +76,16 @@ export async function schedulePushNotification(
   uid: string,
   sessionId: string,
   delaySec: number,
+  ntfyTopic?: string,
 ): Promise<void> {
   const token = getFCMToken();
-  if (!token || delaySec <= 0) return;
+  if ((!token && !ntfyTopic) || delaySec <= 0) return;
 
   try {
     const { getFunctions, httpsCallable } = await import('firebase/functions');
     const functions = getFunctions(getApp());
     const schedule = httpsCallable(functions, 'schedulePrompt');
-    await schedule({ uid, fcmToken: token, delaySec, sessionId });
+    await schedule({ uid, fcmToken: token, delaySec, sessionId, ntfyTopic: ntfyTopic || null });
   } catch {
     // Fallback to local notification handled by the app
   }

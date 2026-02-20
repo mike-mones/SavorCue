@@ -81,6 +81,7 @@ export interface AppSettings {
   socialMode: boolean;
   haWebhookUrl?: string;
   haEventMirroring?: boolean;
+  ntfyTopic?: string;  // e.g. 'savorcue-abc123'
 }
 
 // === Session State Machine Types ===

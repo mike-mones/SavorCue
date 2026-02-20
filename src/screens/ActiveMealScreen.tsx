@@ -16,22 +16,39 @@ function formatCountdown(targetIso: string): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function fullnessColor(v: number): string {
+  if (v <= 2) return '#0d9488';
+  if (v <= 4) return '#84cc16';
+  if (v <= 5) return '#eab308';
+  if (v <= 7) return '#f97316';
+  return '#ef4444';
+}
+
+function fullnessLabel(v: number): string {
+  if (v === 0) return 'Empty';
+  if (v <= 2) return 'Hungry';
+  if (v <= 4) return 'Slightly hungry';
+  if (v === 5) return 'Neutral';
+  if (v <= 7) return 'Satisfied';
+  if (v <= 9) return 'Full';
+  return 'Stuffed';
+}
+
 export default function ActiveMealScreen() {
   const { engine, active, settings } = useApp();
   const navigate = useNavigate();
   const [, setTick] = useState(0);
+  const [sliderValue, setSliderValue] = useState(5);
   const [unlockInput, setUnlockInput] = useState('');
   const [unlockError, setUnlockError] = useState(false);
   const [holdProgress, setHoldProgress] = useState(0);
   const holdTimerRef = useRef<number | null>(null);
 
-  // Force re-render every second for timers
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
 
-  // Redirect if no active session (unless admin testing)
   useEffect(() => {
     if (!active) {
       try { if (localStorage.getItem('savorcue_admin') === '1') return; } catch {}
@@ -46,8 +63,8 @@ export default function ActiveMealScreen() {
 
   const { session, state, timer, lastFullnessRating } = active;
 
-  const handleRate = async (rating: number) => {
-    await engine.rateFullness(rating);
+  const handleRate = async () => {
+    await engine.rateFullness(sliderValue);
   };
 
   const handleIgnore = async () => {
@@ -89,18 +106,6 @@ export default function ActiveMealScreen() {
     setHoldProgress(0);
   };
 
-  const handlePause = async () => {
-    await engine.startPause();
-  };
-
-  const handleEndMeal = () => {
-    navigate('/end-meal');
-  };
-
-  const handleContinueFromDone = async () => {
-    await engine.continueFromDone();
-  };
-
   const handleDeleteMeal = async () => {
     if (window.confirm('Delete this meal? This cannot be undone.')) {
       await engine.deleteCurrentMeal();
@@ -108,33 +113,31 @@ export default function ActiveMealScreen() {
     }
   };
 
+  const color = fullnessColor(sliderValue);
+
   return (
-    <div className="min-h-screen px-6 py-6 max-w-md mx-auto flex flex-col">
+    <div style={{ backgroundColor: '#faf9f7', minHeight: '100vh', color: '#1a1a1a', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
         <div>
-          <span className="text-sm text-gray-500 dark:text-gray-400">Elapsed</span>
-          <p className="text-2xl font-mono font-bold text-gray-800 dark:text-gray-100">
-            {formatElapsed(session.startedAt)}
-          </p>
+          <p style={{ fontSize: 11, color: '#8a8a8a', textTransform: 'uppercase', letterSpacing: 1, margin: 0 }}>Elapsed</p>
+          <p style={{ fontSize: 28, fontWeight: 800, fontFamily: 'monospace', margin: 0 }}>{formatElapsed(session.startedAt)}</p>
         </div>
-        <div className="text-right">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Fullness</span>
-          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ fontSize: 11, color: '#8a8a8a', textTransform: 'uppercase', letterSpacing: 1, margin: 0 }}>Fullness</p>
+          <p style={{ fontSize: 28, fontWeight: 800, color: lastFullnessRating != null ? fullnessColor(lastFullnessRating) : '#ddd', margin: 0 }}>
             {lastFullnessRating != null ? `${lastFullnessRating}/10` : '—'}
           </p>
         </div>
       </div>
 
-      {/* State indicator */}
-      <div className="mb-4 text-center">
-        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-          state === 'pause'
-            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-            : state === 'done_flow'
-            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-            : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
-        }`}>
+      {/* State badge */}
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <span style={{
+          display: 'inline-block', padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+          backgroundColor: state === 'pause' ? '#fef3c7' : state === 'done_flow' ? '#fee2e2' : '#d1fae5',
+          color: state === 'pause' ? '#92400e' : state === 'done_flow' ? '#991b1b' : '#065f46',
+        }}>
           {state === 'active_waiting_for_prompt_time' && 'Eating'}
           {state === 'active_waiting_for_fullness_input' && 'Check in'}
           {state === 'active_high_fullness_unlock' && 'Continue?'}
@@ -143,191 +146,147 @@ export default function ActiveMealScreen() {
         </span>
       </div>
 
-      {/* Countdown to next prompt */}
-      {state === 'active_waiting_for_prompt_time' && timer.nextPromptAt && (
-        <div className="text-center mb-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Next check-in</p>
-          <p className="text-4xl font-mono font-bold text-gray-800 dark:text-gray-100">
-            {formatCountdown(timer.nextPromptAt)}
-          </p>
-        </div>
-      )}
+      {/* Main content area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 20px', maxWidth: 480, margin: '0 auto', width: '100%' }}>
 
-      {/* Fullness input prompt */}
-      {state === 'active_waiting_for_fullness_input' && (
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <p className="text-lg text-gray-700 dark:text-gray-200 mb-6 text-center">
-            How full are you right now?
-          </p>
-          <div className="grid grid-cols-4 gap-3 w-full max-w-xs mb-6">
-            {Array.from({ length: 11 }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => handleRate(i)}
-                className={`py-3 rounded-xl text-lg font-bold active:scale-95 transition-transform ${
-                  i <= 3
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
-                    : i <= 6
-                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'
-                    : i <= 8
-                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
-                    : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-                }`}
-              >
-                {i}
-              </button>
-            ))}
-          </div>
-          <button onClick={handleIgnore} className="text-sm text-gray-400 underline">
-            Not now
-          </button>
-        </div>
-      )}
-
-      {/* High fullness unlock */}
-      {state === 'active_high_fullness_unlock' && (
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <p className="text-lg text-gray-700 dark:text-gray-200 mb-2 text-center">
-            Do you want to keep eating?
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 text-center">
-            Leftovers are always okay.
-          </p>
-
-          <button
-            onClick={handlePause}
-            className="w-full max-w-xs bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-semibold py-4 rounded-xl mb-3 active:scale-95 transition-transform"
-          >
-            Pause now
-          </button>
-
-          {/* Unlock methods */}
-          {settings.unlockMethod === 'tap' && (
-            <button
-              onClick={handleTapUnlock}
-              className="w-full max-w-xs bg-orange-500 hover:bg-orange-600 text-white text-lg py-3 rounded-xl active:scale-95 transition-transform"
-            >
-              Continue eating
-            </button>
-          )}
-
-          {settings.unlockMethod === 'hold' && (
-            <button
-              onMouseDown={handleHoldStart}
-              onMouseUp={handleHoldEnd}
-              onMouseLeave={handleHoldEnd}
-              onTouchStart={handleHoldStart}
-              onTouchEnd={handleHoldEnd}
-              className="w-full max-w-xs bg-orange-500 text-white text-lg py-3 rounded-xl relative overflow-hidden"
-            >
-              <div
-                className="absolute inset-0 bg-orange-700 transition-none"
-                style={{ width: `${holdProgress * 100}%` }}
-              />
-              <span className="relative z-10">Hold to continue</span>
-            </button>
-          )}
-
-          {settings.unlockMethod === 'type_code' && (
-            <div className="w-full max-w-xs">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 text-center">
-                Type <span className="font-mono font-bold">{settings.unlockCode}</span> to continue
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={unlockInput}
-                  onChange={(e) => setUnlockInput(e.target.value)}
-                  className={`flex-1 px-4 py-3 rounded-xl border-2 text-center text-lg font-mono uppercase bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 ${
-                    unlockError
-                      ? 'border-red-500'
-                      : 'border-gray-300 dark:border-gray-600 focus:border-orange-500'
-                  } outline-none`}
-                  placeholder="Type here"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="characters"
-                />
-                <button
-                  onClick={handleUnlockSubmit}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 rounded-xl font-semibold active:scale-95 transition-transform"
-                >
-                  Go
-                </button>
-              </div>
-              {unlockError && (
-                <p className="text-red-500 text-sm mt-1 text-center">Try again</p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Pause screen */}
-      {state === 'pause' && (
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <p className="text-lg text-gray-700 dark:text-gray-200 mb-2 text-center">
-            Take a breath.
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 text-center">
-            Move the plate away if you can.
-          </p>
-          {timer.pauseEndsAt && (
-            <p className="text-4xl font-mono font-bold text-yellow-600 dark:text-yellow-400 mb-6">
-              {formatCountdown(timer.pauseEndsAt)}
+        {/* Countdown */}
+        {state === 'active_waiting_for_prompt_time' && timer.nextPromptAt && (
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <p style={{ fontSize: 13, color: '#8a8a8a', marginBottom: 4 }}>Next check-in</p>
+            <p style={{ fontSize: 56, fontWeight: 800, fontFamily: 'monospace', color: '#1a1a1a', margin: 0 }}>
+              {formatCountdown(timer.nextPromptAt)}
             </p>
-          )}
-          <button
-            onClick={() => engine.endPause()}
-            className="w-full max-w-xs bg-emerald-600 text-white text-lg py-3 rounded-xl mb-3 active:scale-95 transition-transform"
-          >
-            Re-check
-          </button>
-          <button
-            onClick={handleEndMeal}
-            className="text-sm text-gray-500 dark:text-gray-400 underline"
-          >
-            End meal
-          </button>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Done flow */}
-      {state === 'done_flow' && (
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2 text-center">
-            You're done eating
-          </p>
-          <p className="text-gray-500 dark:text-gray-400 mb-8 text-center">
-            Take a 2-minute pause and move the plate away.
-          </p>
-          <button
-            onClick={handlePause}
-            className="w-full max-w-xs bg-emerald-600 text-white text-lg font-semibold py-4 rounded-xl mb-3 active:scale-95 transition-transform"
-          >
-            Start 2-minute pause
-          </button>
-          <button
-            onClick={handleContinueFromDone}
-            className="text-sm text-gray-500 dark:text-gray-400 underline"
-          >
-            I want to continue
-          </button>
-        </div>
-      )}
+        {/* Fullness slider prompt */}
+        {state === 'active_waiting_for_fullness_input' && (
+          <div>
+            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 16 }}>
+              <p style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a', marginBottom: 16, textAlign: 'center' }}>
+                How full are you right now?
+              </p>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
+                <span style={{ fontSize: 56, fontWeight: 800, lineHeight: 1, color }}>{sliderValue}</span>
+                <span style={{ fontSize: 14, color: '#8a8a8a' }}>{fullnessLabel(sliderValue)}</span>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <div style={{
+                  position: 'absolute', inset: 0, top: '50%', transform: 'translateY(-50%)',
+                  height: 6, borderRadius: 999,
+                  background: 'linear-gradient(to right, #0d9488 0%, #84cc16 25%, #eab308 50%, #f97316 75%, #ef4444 100%)',
+                }} />
+                <input
+                  type="range" min={0} max={10} step={1} value={sliderValue}
+                  onChange={(e) => setSliderValue(Number(e.target.value))}
+                  style={{ position: 'relative', width: '100%', height: 32, background: 'transparent', zIndex: 1, '--thumb-color': color } as React.CSSProperties}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#b0ada8', marginTop: 6 }}>
+                <span>Empty</span><span>Neutral</span><span>Stuffed</span>
+              </div>
+            </div>
+            <button
+              onClick={handleRate}
+              style={{ width: '100%', padding: '16px 0', borderRadius: 14, fontSize: 17, fontWeight: 700, backgroundColor: '#0d9488', color: '#fff', marginBottom: 8 }}
+            >
+              Submit
+            </button>
+            <button onClick={handleIgnore} style={{ width: '100%', fontSize: 14, color: '#b0ada8', padding: '8px 0' }}>
+              Not now
+            </button>
+          </div>
+        )}
+
+        {/* High fullness unlock */}
+        {state === 'active_high_fullness_unlock' && (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Do you want to keep eating?</p>
+            <p style={{ fontSize: 14, color: '#8a8a8a', marginBottom: 24 }}>Leftovers are always okay.</p>
+
+            <button
+              onClick={() => engine.startPause()}
+              style={{ width: '100%', padding: '16px 0', borderRadius: 14, fontSize: 16, fontWeight: 700, backgroundColor: '#0d9488', color: '#fff', marginBottom: 12 }}
+            >
+              Pause now
+            </button>
+
+            {settings.unlockMethod === 'tap' && (
+              <button onClick={handleTapUnlock} style={{ width: '100%', padding: '14px 0', borderRadius: 14, fontSize: 15, fontWeight: 600, backgroundColor: '#f97316', color: '#fff' }}>
+                Continue eating
+              </button>
+            )}
+
+            {settings.unlockMethod === 'hold' && (
+              <button
+                onMouseDown={handleHoldStart} onMouseUp={handleHoldEnd} onMouseLeave={handleHoldEnd}
+                onTouchStart={handleHoldStart} onTouchEnd={handleHoldEnd}
+                style={{ width: '100%', padding: '14px 0', borderRadius: 14, fontSize: 15, fontWeight: 600, backgroundColor: '#f97316', color: '#fff', position: 'relative', overflow: 'hidden' }}
+              >
+                <div style={{ position: 'absolute', inset: 0, backgroundColor: '#ea580c', width: `${holdProgress * 100}%` }} />
+                <span style={{ position: 'relative', zIndex: 1 }}>Hold to continue</span>
+              </button>
+            )}
+
+            {settings.unlockMethod === 'type_code' && (
+              <div>
+                <p style={{ fontSize: 13, color: '#8a8a8a', marginBottom: 8 }}>
+                  Type <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{settings.unlockCode}</span> to continue
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text" value={unlockInput}
+                    onChange={(e) => setUnlockInput(e.target.value)}
+                    style={{ flex: 1, padding: '14px', borderRadius: 14, textAlign: 'center', fontSize: 16, fontFamily: 'monospace', textTransform: 'uppercase', border: unlockError ? '2px solid #ef4444' : '2px solid #e8e6e3', outline: 'none', backgroundColor: '#fff' }}
+                    placeholder="Type here" autoComplete="off" autoCorrect="off" autoCapitalize="characters"
+                  />
+                  <button onClick={handleUnlockSubmit} style={{ padding: '14px 24px', borderRadius: 14, fontSize: 15, fontWeight: 700, backgroundColor: '#f97316', color: '#fff' }}>Go</button>
+                </div>
+                {unlockError && <p style={{ fontSize: 13, color: '#ef4444', marginTop: 6, textAlign: 'center' }}>Try again</p>}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pause */}
+        {state === 'pause' && (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Take a breath.</p>
+            <p style={{ fontSize: 14, color: '#8a8a8a', marginBottom: 24 }}>Move the plate away if you can.</p>
+            {timer.pauseEndsAt && (
+              <p style={{ fontSize: 56, fontWeight: 800, fontFamily: 'monospace', color: '#eab308', marginBottom: 24 }}>
+                {formatCountdown(timer.pauseEndsAt)}
+              </p>
+            )}
+            <button onClick={() => engine.endPause()} style={{ width: '100%', padding: '16px 0', borderRadius: 14, fontSize: 16, fontWeight: 700, backgroundColor: '#0d9488', color: '#fff', marginBottom: 12 }}>
+              Re-check
+            </button>
+            <button onClick={() => navigate('/end-meal')} style={{ fontSize: 14, color: '#b0ada8' }}>End meal</button>
+          </div>
+        )}
+
+        {/* Done flow */}
+        {state === 'done_flow' && (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>You're done eating</p>
+            <p style={{ fontSize: 14, color: '#8a8a8a', marginBottom: 32 }}>Take a 2-minute pause and move the plate away.</p>
+            <button
+              onClick={() => engine.startPause()}
+              style={{ width: '100%', padding: '16px 0', borderRadius: 14, fontSize: 16, fontWeight: 700, backgroundColor: '#0d9488', color: '#fff', marginBottom: 12 }}
+            >
+              Start 2-minute pause
+            </button>
+            <button onClick={() => engine.continueFromDone()} style={{ fontSize: 14, color: '#b0ada8' }}>I want to continue</button>
+          </div>
+        )}
+      </div>
 
       {/* Bottom bar */}
-      <div className="mt-auto pt-6 flex justify-center gap-3">
-        <button
-          onClick={handleEndMeal}
-          className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-6 py-3 rounded-xl text-sm font-medium"
-        >
+      <div style={{ padding: '16px 20px 28px', display: 'flex', justifyContent: 'center', gap: 10 }}>
+        <button onClick={() => navigate('/end-meal')} style={{ padding: '12px 24px', borderRadius: 12, fontSize: 14, fontWeight: 600, backgroundColor: '#f0eeeb', color: '#5a5a5a' }}>
           End meal
         </button>
-        <button
-          onClick={handleDeleteMeal}
-          className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-6 py-3 rounded-xl text-sm font-medium"
-        >
+        <button onClick={handleDeleteMeal} style={{ padding: '12px 24px', borderRadius: 12, fontSize: 14, fontWeight: 600, backgroundColor: '#fee2e2', color: '#dc2626' }}>
           Delete meal
         </button>
       </div>

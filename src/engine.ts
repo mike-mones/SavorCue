@@ -238,7 +238,7 @@ export class SessionEngine {
 
     // Schedule push notification
     if (this.uid && firstInterval > 0) {
-      schedulePushNotification(this.uid, session.id, firstInterval).catch(() => {});
+      schedulePushNotification(this.uid, session.id, firstInterval, this.settings.ntfyTopic).catch(() => {});
     }
 
     this.notify();
@@ -301,7 +301,7 @@ export class SessionEngine {
       // Schedule push notification
       if (this.uid && interval > 0) {
         cancelPushNotifications(this.uid, this.active.session.id).catch(() => {});
-        schedulePushNotification(this.uid, this.active.session.id, interval).catch(() => {});
+        schedulePushNotification(this.uid, this.active.session.id, interval, this.settings.ntfyTopic).catch(() => {});
       }
     }
 
@@ -381,7 +381,7 @@ export class SessionEngine {
       // Schedule push
       if (this.uid) {
         cancelPushNotifications(this.uid, this.active.session.id).catch(() => {});
-        schedulePushNotification(this.uid, this.active.session.id, this.settings.unlockWindowSec).catch(() => {});
+        schedulePushNotification(this.uid, this.active.session.id, this.settings.unlockWindowSec, this.settings.ntfyTopic).catch(() => {});
       }
     } else {
       const deniedEvent = createEvent(this.active.session.id, 'unlock_denied');

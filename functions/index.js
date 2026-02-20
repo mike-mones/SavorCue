@@ -8,8 +8,8 @@ const messaging = admin.messaging();
 
 // Client calls this to schedule a push notification
 exports.schedulePrompt = onCall(async (request) => {
-  const { uid, fcmToken, delaySec, sessionId } = request.data;
-  if (!uid || !fcmToken || !delaySec || !sessionId) {
+  const { uid, fcmToken, delaySec, sessionId, ntfyTopic } = request.data;
+  if (!uid || !delaySec || !sessionId) {
     throw new Error("Missing required fields");
   }
 
@@ -18,7 +18,8 @@ exports.schedulePrompt = onCall(async (request) => {
   // Store the scheduled notification
   await db.collection("scheduledNotifications").add({
     uid,
-    fcmToken,
+    fcmToken: fcmToken || null,
+    ntfyTopic: ntfyTopic || null,
     sessionId,
     sendAt: admin.firestore.Timestamp.fromDate(sendAt),
     sent: false,
@@ -65,29 +66,50 @@ exports.sendDueNotifications = onSchedule("* * * * *", async () => {
   const batch = db.batch();
 
   for (const doc of snap.docs) {
-    const { fcmToken } = doc.data();
+    const { fcmToken, ntfyTopic } = doc.data();
 
-    try {
-      await messaging.send({
-        token: fcmToken,
-        notification: {
-          title: "SavorCue",
-          body: "How full are you right now?",
-        },
-        webpush: {
+    // Send via FCM if token exists
+    if (fcmToken) {
+      try {
+        await messaging.send({
+          token: fcmToken,
           notification: {
-            icon: "/icon-192.png",
-            tag: "savorcue-prompt",
-            renotify: true,
-            requireInteraction: true,
+            title: "SavorCue",
+            body: "How full are you right now?",
           },
-          fcmOptions: {
-            link: "https://savorcue.web.app/meal",
+          webpush: {
+            notification: {
+              icon: "/icon-192.png",
+              tag: "savorcue-prompt",
+              renotify: true,
+              requireInteraction: true,
+            },
+            fcmOptions: {
+              link: "https://savorcue.web.app/meal",
+            },
           },
-        },
-      });
-    } catch {
-      // Token may be invalid — ignore
+        });
+      } catch {
+        // Token may be invalid
+      }
+    }
+
+    // Send via ntfy if topic exists
+    if (ntfyTopic) {
+      try {
+        await fetch(`https://ntfy.sh/${ntfyTopic}`, {
+          method: "POST",
+          headers: {
+            "Title": "SavorCue",
+            "Tags": "fork_and_knife",
+            "Click": "https://savorcue.web.app/meal",
+            "Priority": "high",
+          },
+          body: "How full are you right now?",
+        });
+      } catch {
+        // ntfy unavailable
+      }
     }
 
     batch.update(doc.ref, { sent: true });
