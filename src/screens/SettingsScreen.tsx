@@ -9,18 +9,16 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   return (
     <button
       onClick={() => onChange(!on)}
-      className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors ${
-        on
-          ? 'bg-emerald-500 border-emerald-500'
-          : 'bg-gray-300 border-gray-300 dark:bg-gray-600 dark:border-gray-600'
-      }`}
+      style={{ backgroundColor: on ? '#10b981' : '#9ca3af' }}
+      className="relative inline-flex h-9 w-16 shrink-0 items-center rounded-full transition-colors"
     >
       <span
-        className={`inline-block h-6 w-6 rounded-full bg-white shadow-md transition-transform ${
-          on ? 'translate-x-6' : 'translate-x-1'
-        }`}
+        style={{
+          transform: on ? 'translateX(30px)' : 'translateX(4px)',
+          transition: 'transform 0.2s',
+        }}
+        className="inline-block h-7 w-7 rounded-full bg-white shadow-md"
       />
-      <span className="sr-only">{on ? 'On' : 'Off'}</span>
     </button>
   );
 }
