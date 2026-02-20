@@ -17,19 +17,18 @@ function OptionRow({ label, options, value, onChange }: {
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm mb-3 overflow-hidden">
-      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 px-4 pt-4 pb-2">{label}</p>
-      <div className="px-2 pb-2">
+    <div>
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-1">{label}</p>
+      <div className="flex flex-wrap gap-2">
         {options.map((o) => (
           <button
             key={o.key}
             onClick={() => onChange(value === o.key ? '' : o.key)}
-            style={value === o.key ? { backgroundColor: '#10b981', color: '#fff' } : undefined}
-            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98] mb-1 last:mb-0 ${
-              value === o.key
-                ? ''
-                : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300'
-            }`}
+            style={{
+              backgroundColor: value === o.key ? '#10b981' : '#e5e7eb',
+              color: value === o.key ? '#fff' : '#374151',
+            }}
+            className="px-5 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95 shadow-sm"
           >
             {o.label}
           </button>
@@ -145,7 +144,8 @@ export default function PreMealScreen() {
         </button>
       ) : (
         <div className="mb-3">
-          <OptionRow
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm px-4 py-5 space-y-5">
+            <OptionRow
             label="Meal mode"
             options={[
               { key: 'quick', label: 'Quick' },
@@ -205,6 +205,7 @@ export default function PreMealScreen() {
             value={alcohol === true ? 'yes' : alcohol === false ? 'no' : ''}
             onChange={(v) => setAlcohol(v === 'yes' ? true : v === 'no' ? false : null)}
           />
+          </div>
           <button
             onClick={() => setShowOptional(false)}
             className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-2 block px-1"
