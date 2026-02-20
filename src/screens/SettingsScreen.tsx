@@ -5,7 +5,7 @@ import { useAuth } from '../authContext';
 import type { AppSettings, UnlockMethod } from '../types';
 import { DEFAULT_SETTINGS } from '../defaults';
 import { exportAllData, exportCSV } from '../db';
-import { showNotification, schedulePushNotification, getFCMToken, getNotificationDebugInfo, requestNotificationPermission } from '../notifications';
+import { showNotification, schedulePushNotification, getNotificationDebugInfo, requestNotificationPermission } from '../notifications';
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
