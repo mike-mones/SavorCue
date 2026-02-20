@@ -15,61 +15,51 @@ export default function HomeScreen() {
   if (active) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div style={{ backgroundColor: '#0f0f0f', minHeight: '100vh', color: '#fafafa', display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
-      <div className="px-5 pt-5 pb-2 flex items-center justify-between">
-        <div />
+      <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         {user && (
-          <div className="flex items-center gap-2.5">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {user.photoURL && (
-              <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-gray-800 shadow-sm" referrerPolicy="no-referrer" />
+              <img src={user.photoURL} alt="" style={{ width: 32, height: 32, borderRadius: '50%' }} referrerPolicy="no-referrer" />
             )}
-            <button onClick={logout} className="text-xs text-gray-400 dark:text-gray-500">
-              Sign out
-            </button>
+            <button onClick={logout} style={{ fontSize: 12, color: '#555' }}>Sign out</button>
           </div>
         )}
       </div>
 
       {/* Hero */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
-        <div className="w-16 h-16 rounded-3xl flex items-center justify-center mb-5" style={{ backgroundColor: '#10b981' }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-            <path d="M12 6v6l4 2"/>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px 40px' }}>
+        <div style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
           </svg>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">SavorCue</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-10 text-center text-sm">
-          Mindful meal pacing
-        </p>
+        <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>SavorCue</h1>
+        <p style={{ fontSize: 14, color: '#666', marginBottom: 40 }}>Mindful meal pacing</p>
 
         <button
           onClick={() => navigate('/pre-meal')}
-          style={{ backgroundColor: '#10b981' }}
-          className="w-full max-w-sm text-white text-lg font-semibold py-4 rounded-2xl shadow-lg shadow-emerald-500/20 active:scale-[0.97] transition-transform mb-4"
+          style={{ width: '100%', maxWidth: 360, padding: '18px 0', borderRadius: 16, fontSize: 17, fontWeight: 700, backgroundColor: '#22c55e', color: '#000' }}
         >
           Start Meal
         </button>
       </div>
 
-      {/* Bottom nav */}
-      <div className="px-6 pb-8">
-        <div className="flex justify-around bg-white dark:bg-gray-800 rounded-2xl shadow-sm py-3">
+      {/* Nav */}
+      <div style={{ padding: '0 20px 28px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-around', backgroundColor: '#1a1a1a', borderRadius: 16, padding: '14px 0' }}>
           {[
-            { label: 'Analytics', path: '/analytics', icon: 'M3 3v18h18M7 16l4-8 4 4 4-6' },
-            { label: 'History', path: '/history', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-            { label: 'Settings', path: '/settings', icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4' },
-          ].map(({ label, path, icon }) => (
+            { label: 'Analytics', path: '/analytics' },
+            { label: 'History', path: '/history' },
+            { label: 'Settings', path: '/settings' },
+          ].map(({ label, path }) => (
             <button
               key={path}
               onClick={() => navigate(path)}
-              className="flex flex-col items-center gap-1 px-4 py-1"
+              style={{ fontSize: 13, color: '#777', fontWeight: 500 }}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 dark:text-gray-500">
-                <path d={icon} />
-              </svg>
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{label}</span>
+              {label}
             </button>
           ))}
         </div>

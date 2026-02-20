@@ -53,7 +53,7 @@ function AuthGate() {
 
   return (
     <AppProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div style={{ minHeight: '100vh', backgroundColor: '#0f0f0f' }}>
         <AppRoutes />
       </div>
     </AppProvider>

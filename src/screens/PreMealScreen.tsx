@@ -20,37 +20,34 @@ function fullnessLabel(v: number): string {
   return 'Stuffed';
 }
 
-function fullnessEmoji(v: number): string {
-  if (v <= 2) return '🟢';
-  if (v <= 5) return '🟡';
-  if (v <= 7) return '🟠';
-  return '🔴';
-}
-
-function PickerGroup({ label, options, value, onChange }: {
+function Chips({ label, options, value, onChange }: {
   label: string;
-  options: { key: string; label: string; icon?: string }[];
+  options: { key: string; label: string }[];
   value: string;
   onChange: (v: string) => void;
 }) {
   return (
     <div>
-      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2.5">{label}</p>
-      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(options.length, 3)}, 1fr)` }}>
+      <p className="text-xs font-medium uppercase tracking-widest mb-2.5" style={{ color: '#888' }}>{label}</p>
+      <div className="flex gap-2">
         {options.map((o) => {
-          const selected = value === o.key;
+          const sel = value === o.key;
           return (
             <button
               key={o.key}
-              onClick={() => onChange(selected ? '' : o.key)}
+              onClick={() => onChange(sel ? '' : o.key)}
               style={{
-                backgroundColor: selected ? '#10b981' : '#f3f4f6',
-                color: selected ? '#fff' : '#4b5563',
-                border: selected ? '2px solid #059669' : '2px solid transparent',
+                flex: 1,
+                padding: '14px 0',
+                borderRadius: 14,
+                fontSize: 14,
+                fontWeight: 600,
+                backgroundColor: sel ? '#22c55e' : '#1a1a1a',
+                color: sel ? '#000' : '#aaa',
+                border: sel ? 'none' : '1px solid #2a2a2a',
+                transition: 'all 0.15s',
               }}
-              className="py-3.5 px-3 rounded-2xl text-sm font-semibold transition-all active:scale-[0.96] text-center"
             >
-              {o.icon && <span className="block text-lg mb-0.5">{o.icon}</span>}
               {o.label}
             </button>
           );
@@ -89,135 +86,119 @@ export default function PreMealScreen() {
   const active = fullness !== null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ backgroundColor: '#0f0f0f', minHeight: '100vh', color: '#fafafa' }}>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md px-5 pt-5 pb-3 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">New meal</h2>
-        <button
-          onClick={() => navigate('/')}
-          className="text-sm font-medium text-gray-400 dark:text-gray-500"
-        >
-          Cancel
-        </button>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(15,15,15,0.9)', backdropFilter: 'blur(20px)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>New meal</h2>
+        <button onClick={() => navigate('/')} style={{ fontSize: 14, color: '#666' }}>Cancel</button>
       </div>
 
-      <div className="px-5 pb-32 max-w-md mx-auto space-y-6">
-        {/* Fullness slider */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm">
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-            How full are you right now?
+      <div style={{ padding: '0 20px 140px', maxWidth: 480, margin: '0 auto' }}>
+        {/* Fullness */}
+        <div style={{ backgroundColor: '#1a1a1a', borderRadius: 20, padding: '24px', marginBottom: 24 }}>
+          <p className="text-xs font-medium uppercase tracking-widest mb-4" style={{ color: '#888' }}>
+            How full are you?
           </p>
-          <div className="flex items-center gap-4 mb-4">
-            <span className="text-5xl font-bold tabular-nums" style={{ color: active ? '#10b981' : '#d1d5db' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
+            <span style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: active ? '#22c55e' : '#333' }}>
               {active ? fullness : '—'}
             </span>
-            <div className="flex-1">
-              {active && (
-                <>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{fullnessEmoji(fullness!)} {fullnessLabel(fullness!)}</span>
-                </>
-              )}
-              {!active && <span className="text-sm text-gray-400">Drag the slider below</span>}
-            </div>
+            <span style={{ fontSize: 14, color: '#666' }}>
+              {active ? fullnessLabel(fullness!) : 'Drag to set'}
+            </span>
           </div>
-          <div className="relative">
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-3 rounded-full" style={{
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              position: 'absolute', inset: '0 0', top: '50%', transform: 'translateY(-50%)',
+              height: 6, borderRadius: 999,
               background: active
-                ? 'linear-gradient(to right, #10b981 0%, #84cc16 25%, #eab308 50%, #f97316 75%, #ef4444 100%)'
-                : '#e5e7eb',
+                ? 'linear-gradient(to right, #22c55e 0%, #84cc16 25%, #eab308 50%, #f97316 75%, #ef4444 100%)'
+                : '#2a2a2a',
             }} />
             <input
-              type="range"
-              min={0}
-              max={10}
-              step={1}
+              type="range" min={0} max={10} step={1}
               value={fullness ?? 5}
               onChange={(e) => setFullness(Number(e.target.value))}
-              className="relative w-full h-8 appearance-none bg-transparent cursor-pointer z-10"
-              style={{ WebkitAppearance: 'none' }}
+              style={{ position: 'relative', width: '100%', height: 32, background: 'transparent', zIndex: 1 }}
             />
           </div>
-          <div className="flex justify-between text-[11px] text-gray-400 dark:text-gray-500 mt-1 px-0.5 font-medium">
-            <span>Empty</span>
-            <span>Neutral</span>
-            <span>Stuffed</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555', marginTop: 6 }}>
+            <span>Empty</span><span>Neutral</span><span>Stuffed</span>
           </div>
         </div>
 
-        {/* Meal type */}
-        <PickerGroup
-          label="What are you eating?"
-          options={[
-            { key: 'breakfast', label: 'Breakfast', icon: '🌅' },
-            { key: 'lunch', label: 'Lunch', icon: '☀️' },
-            { key: 'dinner', label: 'Dinner', icon: '🌙' },
-            { key: 'snack', label: 'Snack', icon: '🍿' },
-          ]}
-          value={mealType}
-          onChange={(v) => setMealType(v as MealType)}
-        />
-
-        {/* Location */}
-        <PickerGroup
-          label="Where are you?"
-          options={[
-            { key: 'home', label: 'Home', icon: '🏠' },
-            { key: 'restaurant', label: 'Out', icon: '🍽️' },
-            { key: 'other', label: 'Other', icon: '📍' },
-          ]}
-          value={location}
-          onChange={(v) => setLocation(v as LocationType)}
-        />
-
-        {/* Social */}
-        <PickerGroup
-          label="Who's with you?"
-          options={[
-            { key: 'alone', label: 'Solo', icon: '🧘' },
-            { key: 'with_people', label: 'With others', icon: '👥' },
-          ]}
-          value={social}
-          onChange={(v) => setSocial(v as SocialType)}
-        />
-
-        {/* Food vibe */}
-        <PickerGroup
-          label="How's the food?"
-          options={[
-            { key: 'healthy', label: 'Healthy', icon: '🥗' },
-            { key: 'mixed', label: 'Mixed', icon: '🍱' },
-            { key: 'indulgent', label: 'Indulgent', icon: '🍕' },
-          ]}
-          value={healthyIndulgent}
-          onChange={(v) => setHealthyIndulgent(v as HealthyIndulgent)}
-        />
-
-        {/* Alcohol */}
-        <PickerGroup
-          label="Drinking?"
-          options={[
-            { key: 'yes', label: 'Yes', icon: '🍷' },
-            { key: 'no', label: 'No', icon: '💧' },
-          ]}
-          value={alcohol === true ? 'yes' : alcohol === false ? 'no' : ''}
-          onChange={(v) => setAlcohol(v === 'yes' ? true : v === 'no' ? false : null)}
-        />
+        {/* Options */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <Chips
+            label="What meal?"
+            options={[
+              { key: 'breakfast', label: 'Breakfast' },
+              { key: 'lunch', label: 'Lunch' },
+              { key: 'dinner', label: 'Dinner' },
+              { key: 'snack', label: 'Snack' },
+            ]}
+            value={mealType}
+            onChange={(v) => setMealType(v as MealType)}
+          />
+          <Chips
+            label="Where?"
+            options={[
+              { key: 'home', label: 'Home' },
+              { key: 'restaurant', label: 'Out' },
+              { key: 'other', label: 'Other' },
+            ]}
+            value={location}
+            onChange={(v) => setLocation(v as LocationType)}
+          />
+          <Chips
+            label="With who?"
+            options={[
+              { key: 'alone', label: 'Solo' },
+              { key: 'with_people', label: 'With others' },
+            ]}
+            value={social}
+            onChange={(v) => setSocial(v as SocialType)}
+          />
+          <Chips
+            label="Food vibe"
+            options={[
+              { key: 'healthy', label: 'Healthy' },
+              { key: 'mixed', label: 'Mixed' },
+              { key: 'indulgent', label: 'Indulgent' },
+            ]}
+            value={healthyIndulgent}
+            onChange={(v) => setHealthyIndulgent(v as HealthyIndulgent)}
+          />
+          <Chips
+            label="Drinking?"
+            options={[
+              { key: 'yes', label: 'Yes' },
+              { key: 'no', label: 'No' },
+            ]}
+            value={alcohol === true ? 'yes' : alcohol === false ? 'no' : ''}
+            onChange={(v) => setAlcohol(v === 'yes' ? true : v === 'no' ? false : null)}
+          />
+        </div>
       </div>
 
-      {/* Start button */}
-      <div className="fixed bottom-0 inset-x-0 p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50">
-        <div className="max-w-md mx-auto">
+      {/* Start */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 20px', paddingBottom: 28, backgroundColor: 'rgba(15,15,15,0.85)', backdropFilter: 'blur(20px)', borderTop: '1px solid #1a1a1a' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <button
             onClick={handleStart}
             disabled={!active}
-            style={active ? { backgroundColor: '#10b981' } : undefined}
-            className={`w-full font-bold py-4 rounded-2xl text-lg transition-all active:scale-[0.97] ${
-              active
-                ? 'text-white shadow-xl shadow-emerald-500/30'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-            }`}
+            style={{
+              width: '100%',
+              padding: '16px 0',
+              borderRadius: 16,
+              fontSize: 17,
+              fontWeight: 700,
+              backgroundColor: active ? '#22c55e' : '#1a1a1a',
+              color: active ? '#000' : '#444',
+              transition: 'all 0.2s',
+            }}
           >
-            {active ? 'Start Meal' : 'Set your fullness to begin'}
+            {active ? 'Start Meal' : 'Set fullness to begin'}
           </button>
         </div>
       </div>

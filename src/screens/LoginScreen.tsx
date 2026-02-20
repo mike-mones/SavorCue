@@ -4,19 +4,24 @@ export default function LoginScreen() {
   const { signInWithGoogle } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center px-6">
-      <h1 className="text-4xl font-bold mb-2 text-emerald-600 dark:text-emerald-400">
-        SavorCue
-      </h1>
-      <p className="text-gray-500 dark:text-gray-400 mb-10 text-center">
-        Mindful meal pacing, no guilt
-      </p>
+    <div style={{ backgroundColor: '#0f0f0f', minHeight: '100vh', color: '#fafafa', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
+      <div style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+        </svg>
+      </div>
+      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>SavorCue</h1>
+      <p style={{ fontSize: 14, color: '#666', marginBottom: 40 }}>Mindful meal pacing</p>
 
       <button
         onClick={signInWithGoogle}
-        className="w-full max-w-xs flex items-center justify-center gap-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-100 text-lg font-medium py-3.5 px-6 rounded-2xl shadow-sm active:scale-95 transition-transform"
+        style={{
+          width: '100%', maxWidth: 360, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+          padding: '16px 24px', borderRadius: 16, fontSize: 16, fontWeight: 600,
+          backgroundColor: '#1a1a1a', color: '#fafafa', border: '1px solid #2a2a2a',
+        }}
       >
-        <svg width="20" height="20" viewBox="0 0 48 48">
+        <svg width="18" height="18" viewBox="0 0 48 48">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
           <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
           <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
@@ -25,7 +30,7 @@ export default function LoginScreen() {
         Sign in with Google
       </button>
 
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-6 text-center max-w-xs">
+      <p style={{ fontSize: 12, color: '#444', marginTop: 24, textAlign: 'center', maxWidth: 280 }}>
         Sign in to sync your meals and settings across devices.
       </p>
     </div>
