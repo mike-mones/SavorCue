@@ -8,3 +8,11 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+// Register service worker for PWA cache management
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then((reg) => {
+    // Check for updates every 60 seconds
+    setInterval(() => reg.update(), 60000);
+  }).catch(() => {});
+}
