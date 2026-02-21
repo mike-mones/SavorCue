@@ -330,10 +330,8 @@ class MealViewModel: ObservableObject {
             lastEscalationAt = Date()
             ignoreCount += 1
             notifications.triggerPromptHaptic(attempt: ignoreCount)
-            if let sid = session?.id {
-                let type: NotificationManager.EscalationType = (state == .doneFlow) ? .doneFlowPause : .fullnessPrompt
-                notifications.startEscalation(sessionId: sid, type: type)
-            }
+            let type: NotificationManager.EscalationType = (state == .doneFlow) ? .doneFlowPause : .fullnessPrompt
+            notifications.startEscalation(sessionId: session.id, type: type)
         }
 
         publishWatchState()
