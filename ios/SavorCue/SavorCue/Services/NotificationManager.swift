@@ -15,6 +15,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     enum EscalationType {
         case fullnessPrompt
         case doneFlowPause
+        case unlockPrompt
     }
     
     private let escalationMessages = [
@@ -31,6 +32,14 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         "Pause needed: tap Start 2-minute pause.",
         "SavorCue check-in: begin your pause now.",
         "Reminder: Start 2-minute pause now.",
+    ]
+
+    private let unlockPromptMessages = [
+        "Do you want to keep eating?",
+        "Still want to continue eating? Let us know.",
+        "SavorCue: Continue eating or stop?",
+        "Waiting for your response — keep eating?",
+        "Reminder: tap to decide whether to keep eating.",
     ]
     
     // Escalating sounds: default → triTone → repeated
@@ -94,9 +103,12 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     
     private func scheduleEscalatingNotification() {
         let attempt = min(escalationAttempt, escalationMessages.count - 1)
-        let message = escalationType == .doneFlowPause
-            ? doneFlowMessages[attempt]
-            : escalationMessages[attempt]
+        let message: String
+        switch escalationType {
+        case .doneFlowPause: message = doneFlowMessages[attempt]
+        case .unlockPrompt: message = unlockPromptMessages[attempt]
+        case .fullnessPrompt: message = escalationMessages[attempt]
+        }
         let sound = escalationSounds[min(attempt, escalationSounds.count - 1)]
         
         let content = UNMutableNotificationContent()
@@ -105,7 +117,13 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         content.sound = sound
         content.badge = NSNumber(value: escalationAttempt + 1)
         content.interruptionLevel = attempt >= 3 ? .critical : .timeSensitive
-        content.categoryIdentifier = escalationType == .doneFlowPause ? "DONE_FLOW_PROMPT" : "FULLNESS_PROMPT"
+        let categoryId: String
+        switch escalationType {
+        case .doneFlowPause: categoryId = "DONE_FLOW_PROMPT"
+        case .unlockPrompt: categoryId = "UNLOCK_PROMPT"
+        case .fullnessPrompt: categoryId = "FULLNESS_PROMPT"
+        }
+        content.categoryIdentifier = categoryId
         
         // Schedule 30 seconds from now for re-prompt
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 30, repeats: false)

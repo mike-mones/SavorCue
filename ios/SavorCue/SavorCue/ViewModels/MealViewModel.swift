@@ -16,7 +16,11 @@ class MealViewModel: ObservableObject {
     private var nextPromptAt: Date?
     private var pauseEndsAt: Date?
     private var promptShownAt: Date?
+    private var nextEscalationAt: Date?
     private var ignoreCount: Int = 0
+    private var repromptSec: Int {
+        settings.socialMode ? settings.ignoredPromptRepromptSec * 3 : settings.ignoredPromptRepromptSec
+    }
     private let firestore = FirestoreService.shared
     private let notifications = NotificationManager.shared
     private let watch = WatchConnectivityManager.shared
@@ -78,6 +82,7 @@ class MealViewModel: ObservableObject {
         } else if rating >= settings.highFullnessThreshold {
             triggerUnlockPrompt()
         } else {
+            nextEscalationAt = nil
             state = .waitingForPrompt
             scheduleNextPrompt(in: interval)
         }
@@ -90,6 +95,7 @@ class MealViewModel: ObservableObject {
         state = .waitingForInput
         promptShownAt = Date()
         nextPromptAt = nil
+        nextEscalationAt = Date().addingTimeInterval(TimeInterval(repromptSec))
         
         // Haptic
         notifications.triggerPromptHaptic(attempt: ignoreCount)
@@ -109,14 +115,11 @@ class MealViewModel: ObservableObject {
     
     func ignorePrompt() {
         ignoreCount += 1
-        let delay = settings.socialMode
-            ? settings.ignoredPromptRepromptSec * 3
-            : settings.ignoredPromptRepromptSec
         state = .waitingForPrompt
         
         Task { await logEvent(type: .promptIgnored) }
         
-        scheduleNextPrompt(in: delay)
+        scheduleNextPrompt(in: repromptSec)
         publishWatchState()
     }
     
@@ -145,6 +148,10 @@ class MealViewModel: ObservableObject {
     }
     
     private func grantUnlockWindow() {
+        nextEscalationAt = nil
+        if let sid = session?.id {
+            notifications.cancelAll(sessionId: sid)
+        }
         state = .waitingForPrompt
         scheduleNextPrompt(in: settings.unlockWindowSec)
     }
@@ -153,6 +160,10 @@ class MealViewModel: ObservableObject {
     
     private func triggerUnlockPrompt() {
         state = .highFullnessUnlock
+        nextEscalationAt = Date().addingTimeInterval(TimeInterval(repromptSec))
+        if let sid = session?.id {
+            notifications.startEscalation(sessionId: sid, type: .unlockPrompt)
+        }
         Task { await logEvent(type: .unlockPromptShown) }
     }
     
@@ -160,6 +171,7 @@ class MealViewModel: ObservableObject {
     
     private func triggerDoneFlow() {
         state = .doneFlow
+        nextEscalationAt = Date().addingTimeInterval(TimeInterval(repromptSec))
         if let sid = session?.id {
             notifications.startEscalation(sessionId: sid, type: .doneFlowPause)
             notifications.triggerPromptHaptic(attempt: 3)
@@ -172,7 +184,7 @@ class MealViewModel: ObservableObject {
         if let sid = session?.id {
             notifications.cancelAll(sessionId: sid)
         }
-        state = .highFullnessUnlock
+        triggerUnlockPrompt()
         publishWatchState()
     }
     
@@ -180,6 +192,7 @@ class MealViewModel: ObservableObject {
     
     func startPause() {
         state = .pause
+        nextEscalationAt = nil
         pauseEndsAt = Date().addingTimeInterval(TimeInterval(settings.doneFlowPauseSec))
         nextPromptAt = nil
         
@@ -195,6 +208,7 @@ class MealViewModel: ObservableObject {
         state = .waitingForInput
         pauseEndsAt = nil
         promptShownAt = Date()
+        nextEscalationAt = Date().addingTimeInterval(TimeInterval(repromptSec))
         
         notifications.triggerPromptHaptic()
         if let sid = session?.id {
@@ -244,6 +258,7 @@ class MealViewModel: ObservableObject {
         nextPromptAt = nil
         pauseEndsAt = nil
         promptShownAt = nil
+        nextEscalationAt = nil
         elapsedSeconds = 0
         countdownSeconds = 0
         ignoreCount = 0
@@ -307,6 +322,25 @@ class MealViewModel: ObservableObject {
             if remaining <= 0 {
                 endPause()
             }
+        }
+
+        // Detect dropped escalation timer for states awaiting user action
+        if (state == .waitingForInput || state == .doneFlow || state == .highFullnessUnlock),
+           let target = nextEscalationAt, target <= Date() {
+            let lateByMs = Int(Date().timeIntervalSince(target) * 1000)
+            print("⚠️ [SavorCue] Dropped escalation timer — state: \(state.rawValue), lateByMs: \(lateByMs)")
+            // Advance synchronously before async work to prevent duplicate triggers
+            nextEscalationAt = Date().addingTimeInterval(TimeInterval(repromptSec))
+            if let sid = session?.id {
+                let escType: NotificationManager.EscalationType
+                switch state {
+                case .doneFlow: escType = .doneFlowPause
+                case .highFullnessUnlock: escType = .unlockPrompt
+                default: escType = .fullnessPrompt
+                }
+                notifications.startEscalation(sessionId: sid, type: escType)
+            }
+            Task { await logEvent(type: .escalationSent) }
         }
 
         publishWatchState()

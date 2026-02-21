@@ -53,6 +53,7 @@ enum MealEventType: String, Codable {
     case pauseStarted = "pause_started"
     case pauseEnded = "pause_ended"
     case doneFlowShown = "done_flow_shown"
+    case escalationSent = "escalation_sent"
     case sessionEnded = "session_ended"
     case settingsApplied = "settings_applied"
 }

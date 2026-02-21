@@ -54,7 +54,6 @@ export type MealEventType =
   | 'pause_started'
   | 'pause_ended'
   | 'done_flow_shown'
-  | 'escalation_sent'
   | 'session_ended'
   | 'settings_applied';
 
@@ -102,7 +101,6 @@ export interface TimerState {
   pauseEndsAt: string | null;        // ISO timestamp
   unlockWindowEndsAt: string | null; // ISO timestamp
   promptShownAt: string | null;      // ISO timestamp when current prompt was shown
-  nextEscalationAt: string | null;   // ISO timestamp for next escalation notification
 }
 
 export interface ActiveSession {
