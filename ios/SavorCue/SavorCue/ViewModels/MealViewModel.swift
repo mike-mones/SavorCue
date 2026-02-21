@@ -16,6 +16,7 @@ class MealViewModel: ObservableObject {
     private var nextPromptAt: Date?
     private var pauseEndsAt: Date?
     private var promptShownAt: Date?
+    private var lastEscalationAt: Date?
     private var ignoreCount: Int = 0
     private let firestore = FirestoreService.shared
     private let notifications = NotificationManager.shared
@@ -89,6 +90,7 @@ class MealViewModel: ObservableObject {
     private func showPrompt() {
         state = .waitingForInput
         promptShownAt = Date()
+        lastEscalationAt = Date()
         nextPromptAt = nil
         
         // Haptic
@@ -153,6 +155,11 @@ class MealViewModel: ObservableObject {
     
     private func triggerUnlockPrompt() {
         state = .highFullnessUnlock
+        lastEscalationAt = Date()
+        if let sid = session?.id {
+            notifications.startEscalation(sessionId: sid, type: .fullnessPrompt)
+            notifications.triggerPromptHaptic(attempt: 1)
+        }
         Task { await logEvent(type: .unlockPromptShown) }
     }
     
@@ -160,6 +167,7 @@ class MealViewModel: ObservableObject {
     
     private func triggerDoneFlow() {
         state = .doneFlow
+        lastEscalationAt = Date()
         if let sid = session?.id {
             notifications.startEscalation(sessionId: sid, type: .doneFlowPause)
             notifications.triggerPromptHaptic(attempt: 3)
@@ -244,6 +252,7 @@ class MealViewModel: ObservableObject {
         nextPromptAt = nil
         pauseEndsAt = nil
         promptShownAt = nil
+        lastEscalationAt = nil
         elapsedSeconds = 0
         countdownSeconds = 0
         ignoreCount = 0
@@ -306,6 +315,24 @@ class MealViewModel: ObservableObject {
             countdownSeconds = max(0, remaining)
             if remaining <= 0 {
                 endPause()
+            }
+        }
+
+        // Tick-based escalation: re-notify if user is unresponsive in any blocking state
+        let escalationInterval = settings.socialMode
+            ? TimeInterval(settings.ignoredPromptRepromptSec * 3)
+            : TimeInterval(settings.ignoredPromptRepromptSec)
+
+        if (state == .waitingForInput || state == .highFullnessUnlock || state == .doneFlow),
+           let lastEsc = lastEscalationAt,
+           Date().timeIntervalSince(lastEsc) >= escalationInterval {
+            // Fire escalation
+            lastEscalationAt = Date()
+            ignoreCount += 1
+            notifications.triggerPromptHaptic(attempt: ignoreCount)
+            if let sid = session?.id {
+                let type: NotificationManager.EscalationType = (state == .doneFlow) ? .doneFlowPause : .fullnessPrompt
+                notifications.startEscalation(sessionId: sid, type: type)
             }
         }
 
