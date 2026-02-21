@@ -11,7 +11,9 @@ class MealViewModel: ObservableObject {
     @Published var elapsedSeconds: Int = 0
     @Published var countdownSeconds: Int = 0
     @Published var allSessions: [MealSession] = []
-    
+    @Published var showOvereatingReasonSheet = false
+
+    private var pendingContinueBlock: (() -> Void)?
     private var timer: Timer?
     private var nextPromptAt: Date?
     private var pauseEndsAt: Date?
@@ -147,8 +149,15 @@ class MealViewModel: ObservableObject {
     }
     
     private func grantUnlockWindow() {
-        state = .waitingForPrompt
-        scheduleNextPrompt(in: settings.unlockWindowSec)
+        if let rating = lastFullnessRating, rating >= 8 {
+            showReasonPromptThenContinue {
+                self.state = .waitingForPrompt
+                self.scheduleNextPrompt(in: self.settings.unlockWindowSec)
+            }
+        } else {
+            state = .waitingForPrompt
+            scheduleNextPrompt(in: settings.unlockWindowSec)
+        }
     }
     
     // MARK: - Unlock Prompt
@@ -180,8 +189,23 @@ class MealViewModel: ObservableObject {
         if let sid = session?.id {
             notifications.cancelAll(sessionId: sid)
         }
-        state = .highFullnessUnlock
-        publishWatchState()
+        showReasonPromptThenContinue {
+            self.state = .highFullnessUnlock
+            self.publishWatchState()
+        }
+    }
+
+    private func showReasonPromptThenContinue(then action: @escaping () -> Void) {
+        pendingContinueBlock = action
+        showOvereatingReasonSheet = true
+    }
+
+    func selectOvereatingReason(_ reason: String?) {
+        showOvereatingReasonSheet = false
+        let block = pendingContinueBlock
+        pendingContinueBlock = nil
+        Task { await logEvent(type: .overeatingReasonSelected, overeatingReason: reason) }
+        block?()
     }
     
     // MARK: - Pause
@@ -336,7 +360,7 @@ class MealViewModel: ObservableObject {
     
     // MARK: - Event Logging
     
-    private func logEvent(type: MealEventType, fullnessRating: Int? = nil, nextIntervalSec: Int? = nil, responseDelayMs: Int? = nil) async {
+    private func logEvent(type: MealEventType, fullnessRating: Int? = nil, nextIntervalSec: Int? = nil, responseDelayMs: Int? = nil, overeatingReason: String? = nil) async {
         guard let sid = session?.id else { return }
         let event = MealEvent(
             id: UUID().uuidString,
@@ -345,7 +369,8 @@ class MealViewModel: ObservableObject {
             type: type,
             fullnessRating: fullnessRating,
             nextIntervalSec: nextIntervalSec,
-            responseDelayMs: responseDelayMs
+            responseDelayMs: responseDelayMs,
+            overeatingReason: overeatingReason
         )
         await firestore.saveEvent(event)
     }

@@ -109,10 +109,69 @@ struct ActiveMealView: View {
         .sheet(isPresented: $showEndMeal) {
             EndMealView(mealVM: mealVM)
         }
+        .sheet(isPresented: $mealVM.showOvereatingReasonSheet) {
+            overeatingReasonSheet
+        }
     }
     
     // MARK: - Subviews
     
+    var overeatingReasonSheet: some View {
+        ZStack {
+            Color.appBackground.ignoresSafeArea()
+            VStack(spacing: 24) {
+                VStack(spacing: 8) {
+                    Text("Why do you want to continue?")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.appTextPrimary)
+                        .multilineTextAlignment(.center)
+                    Text("A quick reflection can help you eat more mindfully.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.appTextSecondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 32)
+
+                VStack(spacing: 12) {
+                    ForEach(overeatingReasons, id: \.self) { reason in
+                        Button {
+                            mealVM.selectOvereatingReason(reason)
+                        } label: {
+                            Text(reason)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.appTextPrimary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 16)
+                                .padding(.horizontal, 20)
+                                .background(Color.appCard)
+                                .cornerRadius(14)
+                                .shadow(color: .black.opacity(0.04), radius: 3, y: 1)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+
+                Button("Skip") {
+                    mealVM.selectOvereatingReason(nil)
+                }
+                .font(.system(size: 14))
+                .foregroundColor(.appTextTertiary)
+                .padding(.bottom, 16)
+
+                Spacer()
+            }
+        }
+    }
+
+    private let overeatingReasons = [
+        "It was delicious 😋",
+        "Sweet tooth 🍰",
+        "Social pressure 👥",
+        "Still felt hungry",
+        "Other"
+    ]
+
     var countdownView: some View {
         VStack(spacing: 4) {
             Text("Next check-in")
