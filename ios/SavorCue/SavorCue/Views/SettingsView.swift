@@ -36,11 +36,13 @@ struct SettingsView: View {
                         
                         ForEach(0...10, id: \.self) { i in
                             let val = local.promptScheduleByRating[String(i)] ?? 0
-                            SettingsRow(label: "Fullness \(i)", detail: val == 0 ? "Done flow" : nil) {
+                            let isCascaded = firstZeroRating.map { i > $0 } ?? false
+                            let showsDoneFlow = val == 0 || isCascaded
+                            SettingsRow(label: "Fullness \(i)", detail: showsDoneFlow ? "Done flow" : nil) {
                                 StepperControl(value: Binding(
                                     get: { local.promptScheduleByRating[String(i)] ?? 0 },
                                     set: { local.promptScheduleByRating[String(i)] = $0; markChanged() }
-                                ), step: 15, range: 0...600)
+                                ), step: 15, range: 0...600, isDisabled: isCascaded)
                             }
                         }
                     }
@@ -162,6 +164,10 @@ struct SettingsView: View {
     
     private func markChanged() { hasChanges = true; saved = false }
     
+    private var firstZeroRating: Int? {
+        (0...10).first { local.promptScheduleByRating[String($0)] == 0 }
+    }
+    
     private func applyPreset(_ vals: [String: Int]) {
         local.promptScheduleByRating = vals
         markChanged()
@@ -226,6 +232,7 @@ struct StepperControl: View {
     @Binding var value: Int
     let step: Int
     let range: ClosedRange<Int>
+    var isDisabled: Bool = false
     
     var body: some View {
         HStack(spacing: 4) {
@@ -239,8 +246,9 @@ struct StepperControl: View {
                     .cornerRadius(10)
                     .foregroundColor(.appTextPrimary)
             }
+            .disabled(isDisabled)
             
-            Text("\(value)")
+            Text(isDisabled ? "0" : "\(value)")
                 .font(.system(size: 14, weight: .bold, design: .monospaced))
                 .frame(width: 48)
                 .foregroundColor(.appTextPrimary)
@@ -255,7 +263,9 @@ struct StepperControl: View {
                     .cornerRadius(10)
                     .foregroundColor(.appTextPrimary)
             }
+            .disabled(isDisabled)
         }
+        .opacity(isDisabled ? 0.4 : 1.0)
     }
 }
 

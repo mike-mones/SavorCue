@@ -102,7 +102,13 @@ struct AppSettings: Codable {
     )
     
     func intervalForRating(_ rating: Int) -> Int {
-        promptScheduleByRating[String(rating)] ?? 300
+        // If any earlier level has a 0-second interval, this level also returns 0
+        for i in 0..<rating {
+            if promptScheduleByRating[String(i)] == 0 {
+                return 0
+            }
+        }
+        return promptScheduleByRating[String(rating)] ?? 300
     }
 }
 
