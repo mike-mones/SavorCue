@@ -160,11 +160,20 @@ class MealViewModel: ObservableObject {
     
     private func triggerDoneFlow() {
         state = .doneFlow
+        if let sid = session?.id {
+            notifications.startEscalation(sessionId: sid, type: .doneFlowPause)
+            notifications.triggerPromptHaptic(attempt: 3)
+        }
         Task { await logEvent(type: .doneFlowShown) }
+        publishWatchState()
     }
     
     func continueFromDone() {
+        if let sid = session?.id {
+            notifications.cancelAll(sessionId: sid)
+        }
         state = .highFullnessUnlock
+        publishWatchState()
     }
     
     // MARK: - Pause

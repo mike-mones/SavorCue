@@ -67,6 +67,16 @@ struct SavorCueApp: App {
                         .onReceive(NotificationCenter.default.publisher(for: .init("SavorCueWatchEndMeal"))) { _ in
                             mealVM.endMeal()
                         }
+                        .onReceive(NotificationCenter.default.publisher(for: .init("SavorCueStartPause"))) { _ in
+                            if mealVM.state == .doneFlow {
+                                mealVM.startPause()
+                            }
+                        }
+                        .onReceive(NotificationCenter.default.publisher(for: .init("SavorCueContinueEating"))) { _ in
+                            if mealVM.state == .doneFlow {
+                                mealVM.continueFromDone()
+                            }
+                        }
                 }
             }
             .environmentObject(mealVM)

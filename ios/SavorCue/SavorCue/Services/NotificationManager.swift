@@ -10,6 +10,12 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     private var escalationTimer: Timer?
     private var escalationAttempt = 0
     private var activeSessionId: String?
+    private var escalationType: EscalationType = .fullnessPrompt
+
+    enum EscalationType {
+        case fullnessPrompt
+        case doneFlowPause
+    }
     
     private let escalationMessages = [
         "How full are you right now?",
@@ -17,6 +23,14 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         "Still eating? Rate your fullness now.",
         "Hey! SavorCue needs your attention.",
         "REMINDER: Rate your fullness right now!",
+    ]
+
+    private let doneFlowMessages = [
+        "You're at done eating. Start the 2-minute pause now.",
+        "Please start your 2-minute pause.",
+        "Pause needed: tap Start 2-minute pause.",
+        "SavorCue check-in: begin your pause now.",
+        "Reminder: Start 2-minute pause now.",
     ]
     
     // Escalating sounds: default → triTone → repeated
@@ -71,15 +85,18 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     
     // MARK: - Escalation
     
-    func startEscalation(sessionId: String) {
+    func startEscalation(sessionId: String, type: EscalationType = .fullnessPrompt) {
         activeSessionId = sessionId
         escalationAttempt = 0
+        escalationType = type
         scheduleEscalatingNotification()
     }
     
     private func scheduleEscalatingNotification() {
         let attempt = min(escalationAttempt, escalationMessages.count - 1)
-        let message = escalationMessages[attempt]
+        let message = escalationType == .doneFlowPause
+            ? doneFlowMessages[attempt]
+            : escalationMessages[attempt]
         let sound = escalationSounds[min(attempt, escalationSounds.count - 1)]
         
         let content = UNMutableNotificationContent()
@@ -88,7 +105,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         content.sound = sound
         content.badge = NSNumber(value: escalationAttempt + 1)
         content.interruptionLevel = attempt >= 3 ? .critical : .timeSensitive
-        content.categoryIdentifier = "FULLNESS_PROMPT"
+        content.categoryIdentifier = escalationType == .doneFlowPause ? "DONE_FLOW_PROMPT" : "FULLNESS_PROMPT"
         
         // Schedule 30 seconds from now for re-prompt
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 30, repeats: false)
@@ -209,8 +226,18 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             intentIdentifiers: [],
             options: [.customDismissAction]
         )
+
+        let doneCategory = UNNotificationCategory(
+            identifier: "DONE_FLOW_PROMPT",
+            actions: [
+                UNNotificationAction(identifier: "START_PAUSE", title: "Start 2-min pause", options: [.foreground]),
+                UNNotificationAction(identifier: "CONTINUE_EATING", title: "Continue eating", options: [.foreground]),
+            ],
+            intentIdentifiers: [],
+            options: [.customDismissAction]
+        )
         
-        UNUserNotificationCenter.current().setNotificationCategories([category])
+        UNUserNotificationCenter.current().setNotificationCategories([category, doneCategory])
     }
     
     // MARK: - UNUserNotificationCenterDelegate
@@ -239,6 +266,10 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 object: nil,
                 userInfo: ["rating": rating]
             )
+        } else if actionId == "START_PAUSE" {
+            NotificationCenter.default.post(name: .init("SavorCueStartPause"), object: nil)
+        } else if actionId == "CONTINUE_EATING" {
+            NotificationCenter.default.post(name: .init("SavorCueContinueEating"), object: nil)
         }
         
         completionHandler()
