@@ -28,8 +28,8 @@ final class PhoneSessionManager: NSObject, ObservableObject {
             print("[WatchSync] WCSession not supported on this device")
             return
         }
-        WCSession.default.delegate = self
-        WCSession.default.activate()
+        // WCSession delegate and activation are managed centrally (e.g., by WatchConnectivityManager).
+        // This manager assumes the session is already active and configured elsewhere.
     }
 
     // MARK: - Observe MealViewModel
