@@ -1,7 +1,7 @@
 import Foundation
 import WatchConnectivity
 
-final class WatchConnectivityManager: NSObject, ObservableObject {
+final class WatchConnectivityManager: NSObject {
     static let shared = WatchConnectivityManager()
 
     private override init() {
