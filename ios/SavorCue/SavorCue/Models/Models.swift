@@ -53,6 +53,7 @@ enum MealEventType: String, Codable {
     case pauseStarted = "pause_started"
     case pauseEnded = "pause_ended"
     case doneFlowShown = "done_flow_shown"
+    case overeatingReasonSelected = "overeating_reason_selected"
     case sessionEnded = "session_ended"
     case settingsApplied = "settings_applied"
 }
@@ -65,6 +66,7 @@ struct MealEvent: Codable, Identifiable {
     var fullnessRating: Int?
     var nextIntervalSec: Int?
     var responseDelayMs: Int?
+    var overeatingReason: String?
 }
 
 // MARK: - Settings
