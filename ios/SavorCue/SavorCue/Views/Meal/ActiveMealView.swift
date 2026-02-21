@@ -5,6 +5,7 @@ struct ActiveMealView: View {
     @State private var sliderValue: Double = 5
     @State private var unlockInput = ""
     @State private var unlockError = false
+    @State private var showEndMeal = false
     
     var body: some View {
         ZStack {
@@ -79,7 +80,7 @@ struct ActiveMealView: View {
                 // Bottom buttons
                 HStack(spacing: 10) {
                     Button {
-                        mealVM.endMeal()
+                        showEndMeal = true
                     } label: {
                         Text("End meal")
                             .font(.system(size: 14, weight: .semibold))
@@ -104,6 +105,9 @@ struct ActiveMealView: View {
                 }
                 .padding(.bottom, 28)
             }
+        }
+        .sheet(isPresented: $showEndMeal) {
+            EndMealView(mealVM: mealVM)
         }
     }
     
@@ -310,3 +314,4 @@ struct ActiveMealView: View {
         return String(format: "%d:%02d", m, s)
     }
 }
+

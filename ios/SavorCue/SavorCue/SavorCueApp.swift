@@ -1,10 +1,42 @@
 import SwiftUI
 import FirebaseCore
+import FirebaseMessaging
+import UserNotifications
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         FirebaseApp.configure()
+        
+        // Set up notifications
+        NotificationManager.shared.setupCategories()
+        Messaging.messaging().delegate = self
+        
+        // Request notification permission
+        Task {
+            let granted = await NotificationManager.shared.requestPermission()
+            if granted {
+                await MainActor.run {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            }
+        }
+        
         return true
+    }
+    
+    // APNs token received
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Messaging.messaging().apnsToken = deviceToken
+        let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+        Task {
+            await FirestoreService.shared.saveAPNsToken(token)
+        }
+    }
+    
+    // FCM token received
+    nonisolated func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        guard let fcmToken else { return }
+        print("FCM Token: \(fcmToken)")
     }
 }
 
@@ -23,6 +55,14 @@ struct SavorCueApp: App {
                     LoginView(authVM: authVM)
                 } else {
                     MainTabView(mealVM: mealVM, authVM: authVM)
+                        .task {
+                            await mealVM.loadData()
+                        }
+                        .onReceive(NotificationCenter.default.publisher(for: .init("SavorCueQuickRate"))) { notification in
+                            if let rating = notification.userInfo?["rating"] as? Int {
+                                mealVM.rateFullness(rating)
+                            }
+                        }
                 }
             }
             .preferredColorScheme(.light)
