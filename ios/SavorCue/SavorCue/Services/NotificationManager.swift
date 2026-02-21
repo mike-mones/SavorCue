@@ -115,7 +115,15 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     func cancelAll(sessionId: String? = nil) {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
-        UIApplication.shared.applicationIconBadgeNumber = 0
+        if #available(iOS 17.0, *) {
+            UNUserNotificationCenter.current().setBadgeCount(0) { error in
+                if let error {
+                    print("NotificationManager: Failed to clear badge: \(error)")
+                }
+            }
+        } else {
+            UIApplication.shared.applicationIconBadgeNumber = 0
+        }
         escalationAttempt = 0
         activeSessionId = nil
         

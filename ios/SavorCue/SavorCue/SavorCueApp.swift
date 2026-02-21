@@ -10,6 +10,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
         // Set up notifications
         NotificationManager.shared.setupCategories()
         Messaging.messaging().delegate = self
+        WatchConnectivityManager.shared.activate()
         
         // Request notification permission
         Task {
@@ -63,8 +64,12 @@ struct SavorCueApp: App {
                                 mealVM.rateFullness(rating)
                             }
                         }
+                        .onReceive(NotificationCenter.default.publisher(for: .init("SavorCueWatchEndMeal"))) { _ in
+                            mealVM.endMeal()
+                        }
                 }
             }
+            .environmentObject(mealVM)
             .preferredColorScheme(.light)
         }
     }

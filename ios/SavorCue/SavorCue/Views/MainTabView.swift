@@ -37,9 +37,9 @@ struct MainTabView: View {
                             .shadow(color: .appAccent.opacity(0.35), radius: 10, y: 4)
                         
                         Image(systemName: "play.fill")
-                            .font(.system(size: 16))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
-                            .offset(x: 2)
+                            .offset(x: 0.5)
                     }
                 }
                 .offset(y: -4)

@@ -19,6 +19,7 @@ class MealViewModel: ObservableObject {
     private var ignoreCount: Int = 0
     private let firestore = FirestoreService.shared
     private let notifications = NotificationManager.shared
+    private let watch = WatchConnectivityManager.shared
     
     // MARK: - Init
     
@@ -51,6 +52,7 @@ class MealViewModel: ObservableObject {
         let interval = settings.intervalForRating(context?.hungerBefore ?? 0)
         scheduleNextPrompt(in: interval)
         startTimer()
+        publishWatchState()
     }
     
     // MARK: - Rate Fullness
@@ -79,6 +81,7 @@ class MealViewModel: ObservableObject {
             state = .waitingForPrompt
             scheduleNextPrompt(in: interval)
         }
+        publishWatchState()
     }
     
     // MARK: - Show Prompt
@@ -99,6 +102,7 @@ class MealViewModel: ObservableObject {
         Task {
             await logEvent(type: .promptShown)
         }
+        publishWatchState()
     }
     
     // MARK: - Ignore Prompt
@@ -113,6 +117,7 @@ class MealViewModel: ObservableObject {
         Task { await logEvent(type: .promptIgnored) }
         
         scheduleNextPrompt(in: delay)
+        publishWatchState()
     }
     
     // MARK: - Unlock
@@ -174,6 +179,7 @@ class MealViewModel: ObservableObject {
         }
         
         Task { await logEvent(type: .pauseStarted) }
+        publishWatchState()
     }
     
     func endPause() {
@@ -187,6 +193,7 @@ class MealViewModel: ObservableObject {
         }
         
         Task { await logEvent(type: .pauseEnded) }
+        publishWatchState()
     }
     
     // MARK: - End Meal
@@ -209,6 +216,7 @@ class MealViewModel: ObservableObject {
         }
         
         cleanup()
+        publishWatchState()
     }
     
     func deleteMeal() {
@@ -216,6 +224,7 @@ class MealViewModel: ObservableObject {
         notifications.cancelAll(sessionId: sid)
         Task { await firestore.deleteSession(sid) }
         cleanup()
+        publishWatchState()
     }
     
     private func cleanup() {
@@ -290,6 +299,8 @@ class MealViewModel: ObservableObject {
                 endPause()
             }
         }
+
+        publishWatchState()
     }
     
     // MARK: - Event Logging
@@ -306,5 +317,14 @@ class MealViewModel: ObservableObject {
             responseDelayMs: responseDelayMs
         )
         await firestore.saveEvent(event)
+    }
+
+    private func publishWatchState() {
+        watch.sendMealState(
+            state: state,
+            elapsedSeconds: elapsedSeconds,
+            countdownSeconds: countdownSeconds,
+            lastFullnessRating: lastFullnessRating
+        )
     }
 }

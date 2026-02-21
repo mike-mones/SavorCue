@@ -2,21 +2,20 @@ import SwiftUI
 import WatchKit
 
 struct WatchHomeView: View {
+    @StateObject private var session = WatchSessionManager.shared
     @State private var fullness: Double = 5
-    @State private var isInMeal = false
-    @State private var elapsed = 0
-    @State private var showingPrompt = false
-    @State private var timer: Timer?
     
     var body: some View {
-        if isInMeal {
+        if session.mealState != "idle" {
             WatchMealView(
                 fullness: $fullness,
-                elapsed: $elapsed,
-                showingPrompt: $showingPrompt,
-                onEnd: { isInMeal = false; timer?.invalidate() },
+                mealState: session.mealState,
+                elapsed: session.elapsedSeconds,
+                countdown: session.countdownSeconds,
+                lastRating: session.lastFullnessRating,
+                onEnd: { session.sendEndMeal() },
                 onRate: { rating in
-                    showingPrompt = false
+                    session.sendRating(rating)
                     // Haptic confirmation
                     WKInterfaceDevice.current().play(.success)
                 }
@@ -26,32 +25,21 @@ struct WatchHomeView: View {
                 Text("SavorCue")
                     .font(.headline)
                     .foregroundColor(.teal)
-                
-                Button {
-                    isInMeal = true
-                    elapsed = 0
-                    showingPrompt = false
-                    startTimer()
-                } label: {
-                    Label("Start Meal", systemImage: "play.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                }
-                .tint(.teal)
+
+                Text("Start a meal on iPhone")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
             }
-        }
-    }
-    
-    private func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            elapsed += 1
         }
     }
 }
 
 struct WatchMealView: View {
     @Binding var fullness: Double
-    @Binding var elapsed: Int
-    @Binding var showingPrompt: Bool
+    let mealState: String
+    let elapsed: Int
+    let countdown: Int
+    let lastRating: Int?
     let onEnd: () -> Void
     let onRate: (Int) -> Void
     
@@ -62,8 +50,17 @@ struct WatchMealView: View {
                 Text(formatTime(elapsed))
                     .font(.system(size: 22, weight: .heavy, design: .monospaced))
                     .foregroundColor(.white)
+
+                if mealState == "active_waiting_for_prompt_time" {
+                    Text("Next check-in")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Text(formatTime(countdown))
+                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .foregroundColor(.teal)
+                }
                 
-                if showingPrompt {
+                if mealState == "active_waiting_for_fullness_input" {
                     // Fullness prompt
                     Text("How full?")
                         .font(.system(size: 14, weight: .semibold))
@@ -82,7 +79,7 @@ struct WatchMealView: View {
                     .tint(.teal)
                     .font(.system(size: 14, weight: .bold))
                 } else {
-                    Text("Eating...")
+                    Text(lastRating == nil ? "Eating..." : "Last: \(lastRating!)/10")
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
