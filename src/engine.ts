@@ -81,6 +81,7 @@ function emptyTimer(): TimerState {
     pauseEndsAt: null,
     unlockWindowEndsAt: null,
     promptShownAt: null,
+    nextEscalationAt: null,
   };
 }
 
@@ -165,6 +166,9 @@ export class SessionEngine {
 
     const now = Date.now();
     const timer = this.active.timer;
+    const repromptSec = this.settings.socialMode
+      ? this.settings.ignoredPromptRepromptSec * 3
+      : this.settings.ignoredPromptRepromptSec;
 
     // If we were waiting for a prompt and it's past due, show it now
     if (
@@ -196,6 +200,43 @@ export class SessionEngine {
       // Re-prompt
       this.active.state = 'active_waiting_for_fullness_input';
       this.active.timer.promptShownAt = new Date().toISOString();
+    }
+
+    // Detect dropped escalation timer for unresponded fullness prompt
+    if (this.active.state === 'active_waiting_for_fullness_input' && timer.promptShownAt) {
+      const elapsed = (now - new Date(timer.promptShownAt).getTime()) / 1000;
+      if (elapsed >= repromptSec) {
+        console.warn('[SavorCue] Dropped escalation timer detected', {
+          state: this.active.state,
+          expectedAt: new Date(new Date(timer.promptShownAt).getTime() + repromptSec * 1000).toISOString(),
+          lateByMs: (elapsed - repromptSec) * 1000,
+        });
+        // Re-arm so escalation fires immediately on next tick
+        this.active.timer.promptShownAt = new Date(now - repromptSec * 1000).toISOString();
+      }
+    }
+
+    // Detect dropped escalation timer for done/unlock flow
+    if (
+      (this.active.state === 'done_flow' || this.active.state === 'active_high_fullness_unlock') &&
+      timer.nextEscalationAt &&
+      new Date(timer.nextEscalationAt).getTime() <= now
+    ) {
+      console.warn('[SavorCue] Dropped escalation timer detected', {
+        state: this.active.state,
+        expectedAt: timer.nextEscalationAt,
+        lateByMs: now - new Date(timer.nextEscalationAt).getTime(),
+      });
+      // Re-arm immediately so escalation fires on next tick
+      this.active.timer.nextEscalationAt = new Date().toISOString();
+    }
+
+    // Ensure escalation timer is initialized for input-required flow states after resume
+    if (
+      (this.active.state === 'done_flow' || this.active.state === 'active_high_fullness_unlock') &&
+      !timer.nextEscalationAt
+    ) {
+      this.active.timer.nextEscalationAt = schedulePromptAt(repromptSec);
     }
   }
 
@@ -231,6 +272,7 @@ export class SessionEngine {
         pauseEndsAt: null,
         unlockWindowEndsAt: null,
         promptShownAt: null,
+        nextEscalationAt: null,
       },
       events: [startEvent],
       lastFullnessRating: null,
@@ -340,6 +382,10 @@ export class SessionEngine {
     if (!this.active) return;
 
     this.active.state = 'active_high_fullness_unlock';
+    const repromptSec = this.settings.socialMode
+      ? this.settings.ignoredPromptRepromptSec * 3
+      : this.settings.ignoredPromptRepromptSec;
+    this.active.timer.nextEscalationAt = schedulePromptAt(repromptSec);
 
     const event = createEvent(this.active.session.id, 'unlock_prompt_shown');
     await logEvent(event, this.settings, this.uid);
@@ -374,13 +420,14 @@ export class SessionEngine {
       await logEvent(successEvent, this.settings, this.uid);
       this.active.events.push(successEvent);
 
-      // Grant unlock window
+      // Grant unlock window and clear escalation
       this.active.state = 'active_waiting_for_prompt_time';
       this.active.timer = {
         ...this.active.timer,
         nextPromptAt: schedulePromptAt(this.settings.unlockWindowSec),
         unlockWindowEndsAt: schedulePromptAt(this.settings.unlockWindowSec),
         promptShownAt: null,
+        nextEscalationAt: null,
       };
 
       // Schedule push
@@ -404,6 +451,10 @@ export class SessionEngine {
     if (!this.active) return;
 
     this.active.state = 'done_flow';
+    const repromptSec = this.settings.socialMode
+      ? this.settings.ignoredPromptRepromptSec * 3
+      : this.settings.ignoredPromptRepromptSec;
+    this.active.timer.nextEscalationAt = schedulePromptAt(repromptSec);
 
     const event = createEvent(this.active.session.id, 'done_flow_shown');
     await logEvent(event, this.settings, this.uid);
@@ -418,6 +469,7 @@ export class SessionEngine {
     this.active.state = 'pause';
     this.active.timer.pauseEndsAt = schedulePromptAt(this.settings.doneFlowPauseSec);
     this.active.timer.nextPromptAt = null;
+    this.active.timer.nextEscalationAt = null;
 
     const event = createEvent(this.active.session.id, 'pause_started');
     await logEvent(event, this.settings, this.uid);
@@ -444,8 +496,8 @@ export class SessionEngine {
 
   async continueFromDone(): Promise<void> {
     if (!this.active) return;
-    // Transition to unlock flow
-    this.active.state = 'active_high_fullness_unlock';
+    // Transition to unlock flow (sets escalation timer)
+    await this.triggerUnlockPrompt();
     this.notify();
   }
 
@@ -501,6 +553,37 @@ export class SessionEngine {
     this.notify();
   }
 
+  // === Escalation (re-notify user who hasn't responded) ===
+
+  private async sendEscalation(message: string): Promise<void> {
+    if (!this.active) return;
+
+    const repromptSec = this.settings.socialMode
+      ? this.settings.ignoredPromptRepromptSec * 3
+      : this.settings.ignoredPromptRepromptSec;
+
+    const event = createEvent(this.active.session.id, 'escalation_sent', {
+      metadata: { state: this.active.state, message },
+    });
+    await logEvent(event, this.settings, this.uid);
+    this.active.events.push(event);
+
+    showNotification('SavorCue', message);
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
+
+    // Reschedule: for fullness input, reset promptShownAt; for done/unlock, advance nextEscalationAt
+    const state = this.active.state;
+    if (state === 'active_waiting_for_fullness_input') {
+      this.active.timer.promptShownAt = new Date().toISOString();
+    } else if (state === 'done_flow' || state === 'active_high_fullness_unlock') {
+      this.active.timer.nextEscalationAt = schedulePromptAt(repromptSec);
+    }
+
+    this.notify();
+  }
+
   // === Tick (call from setInterval) ===
 
   tick(): void {
@@ -526,6 +609,32 @@ export class SessionEngine {
       new Date(timer.pauseEndsAt).getTime() <= now
     ) {
       this.endPause();
+      return;
+    }
+
+    // Escalation: re-notify if fullness prompt has been unanswered too long
+    if (this.active.state === 'active_waiting_for_fullness_input' && timer.promptShownAt) {
+      const repromptSec = this.settings.socialMode
+        ? this.settings.ignoredPromptRepromptSec * 3
+        : this.settings.ignoredPromptRepromptSec;
+      const elapsed = (now - new Date(timer.promptShownAt).getTime()) / 1000;
+      if (elapsed >= repromptSec) {
+        this.sendEscalation('How full are you right now?');
+        return;
+      }
+    }
+
+    // Escalation: re-notify for done_flow or active_high_fullness_unlock
+    if (
+      (this.active.state === 'done_flow' || this.active.state === 'active_high_fullness_unlock') &&
+      timer.nextEscalationAt &&
+      new Date(timer.nextEscalationAt).getTime() <= now
+    ) {
+      const message =
+        this.active.state === 'done_flow'
+          ? "Tap to confirm you've finished eating"
+          : 'Do you want to keep eating?';
+      this.sendEscalation(message);
       return;
     }
   }
