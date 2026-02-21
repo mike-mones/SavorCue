@@ -3,6 +3,7 @@ import FirebaseAuth
 
 struct ProfileView: View {
     @ObservedObject var authVM: AuthViewModel
+    @AppStorage("isDarkMode") private var isDarkMode = false
     
     var body: some View {
         ZStack {
@@ -44,6 +45,22 @@ struct ProfileView: View {
                     .shadow(color: .black.opacity(0.04), radius: 4, y: 1)
                     .padding(.horizontal, 20)
                 }
+                
+                // Appearance
+                HStack {
+                    Text("Dark Mode")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.appTextPrimary)
+                    Spacer()
+                    Toggle("", isOn: $isDarkMode)
+                        .tint(.appAccent)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 14)
+                .background(Color.appCard)
+                .cornerRadius(14)
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.appChip, lineWidth: 1))
+                .padding(.horizontal, 20)
                 
                 Button {
                     authVM.signOut()

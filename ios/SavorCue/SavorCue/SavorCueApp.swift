@@ -46,6 +46,7 @@ struct SavorCueApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authVM = AuthViewModel()
     @StateObject private var mealVM = MealViewModel()
+    @AppStorage("isDarkMode") private var isDarkMode = false
     
     var body: some Scene {
         WindowGroup {
@@ -80,7 +81,7 @@ struct SavorCueApp: App {
                 }
             }
             .environmentObject(mealVM)
-            .preferredColorScheme(.light)
+            .preferredColorScheme(isDarkMode ? .dark : .light)
         }
     }
 }
