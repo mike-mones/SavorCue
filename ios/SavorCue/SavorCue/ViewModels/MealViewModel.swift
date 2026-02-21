@@ -319,19 +319,16 @@ class MealViewModel: ObservableObject {
         }
 
         // Tick-based escalation: re-notify if user is unresponsive in any blocking state
-        let escalationInterval = settings.socialMode
-            ? TimeInterval(settings.ignoredPromptRepromptSec * 3)
-            : TimeInterval(settings.ignoredPromptRepromptSec)
+        // Fixed interval of 20 seconds between escalations
+        let escalationInterval: TimeInterval = settings.socialMode ? 60 : 20
 
         if (state == .waitingForInput || state == .highFullnessUnlock || state == .doneFlow),
            let lastEsc = lastEscalationAt,
            Date().timeIntervalSince(lastEsc) >= escalationInterval {
-            // Fire escalation
+            // Fire escalation — haptic only, don't restart notification chain
             lastEscalationAt = Date()
             ignoreCount += 1
             notifications.triggerPromptHaptic(attempt: ignoreCount)
-            let type: NotificationManager.EscalationType = (state == .doneFlow) ? .doneFlowPause : .fullnessPrompt
-            notifications.startEscalation(sessionId: session.id, type: type)
         }
 
         publishWatchState()
