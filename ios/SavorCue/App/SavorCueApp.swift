@@ -13,7 +13,7 @@ struct SavorCueApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authVM = AuthViewModel()
     @StateObject private var mealVM = MealViewModel()
-    
+
     var body: some Scene {
         WindowGroup {
             Group {
@@ -26,6 +26,9 @@ struct SavorCueApp: App {
                 }
             }
             .preferredColorScheme(.light)
+            .onAppear {
+                PhoneSessionManager.shared.configure(mealVM: mealVM)
+            }
         }
     }
 }
