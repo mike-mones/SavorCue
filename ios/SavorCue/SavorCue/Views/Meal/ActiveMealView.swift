@@ -6,6 +6,7 @@ struct ActiveMealView: View {
     @State private var unlockInput = ""
     @State private var unlockError = false
     @State private var showEndMeal = false
+    @State private var motivationalQuote: String = MotivationalQuotes.random()
     
     var body: some View {
         ZStack {
@@ -109,6 +110,11 @@ struct ActiveMealView: View {
         .sheet(isPresented: $showEndMeal) {
             EndMealView(mealVM: mealVM)
         }
+        .onChange(of: mealVM.state) { _, newState in
+            if newState == .highFullnessUnlock || newState == .doneFlow {
+                motivationalQuote = MotivationalQuotes.random()
+            }
+        }
     }
     
     // MARK: - Subviews
@@ -179,6 +185,13 @@ struct ActiveMealView: View {
             Text("Leftovers are always okay.")
                 .font(.system(size: 14))
                 .foregroundColor(.appTextSecondary)
+            
+            Text(motivationalQuote)
+                .font(.system(size: 13, weight: .medium, design: .serif))
+                .foregroundColor(.appTextSecondary)
+                .multilineTextAlignment(.center)
+                .italic()
+                .padding(.horizontal, 20)
             
             Button {
                 mealVM.startPause()
@@ -259,6 +272,13 @@ struct ActiveMealView: View {
                 .font(.system(size: 14))
                 .foregroundColor(.appTextSecondary)
                 .multilineTextAlignment(.center)
+            
+            Text(motivationalQuote)
+                .font(.system(size: 13, weight: .medium, design: .serif))
+                .foregroundColor(.appTextSecondary)
+                .multilineTextAlignment(.center)
+                .italic()
+                .padding(.horizontal, 20)
             
             Button {
                 mealVM.startPause()
