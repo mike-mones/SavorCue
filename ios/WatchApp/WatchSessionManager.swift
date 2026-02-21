@@ -22,23 +22,50 @@ final class WatchSessionManager: NSObject, ObservableObject {
     }
 
     func sendRating(_ rating: Int) {
-        guard WCSession.default.isReachable else { return }
-        WCSession.default.sendMessage([
-            "type": "rate_fullness",
-            "rating": rating,
-        ], replyHandler: nil, errorHandler: nil)
+        let session = WCSession.default
+        guard session.activationState == .activated else {
+            print("[WatchSync] Cannot send rating — session not activated")
+            return
+        }
+        let message: [String: Any] = ["type": "rate_fullness", "rating": rating]
+        if session.isReachable {
+            session.sendMessage(message, replyHandler: nil) { error in
+                print("[WatchSync] sendRating failed: \(error.localizedDescription) — falling back to transferUserInfo")
+                session.transferUserInfo(message)
+            }
+        } else {
+            print("[WatchSync] iPhone not reachable — using transferUserInfo for rating")
+            session.transferUserInfo(message)
+        }
     }
 
     func sendEndMeal() {
-        guard WCSession.default.isReachable else { return }
-        WCSession.default.sendMessage([
-            "type": "end_meal",
-        ], replyHandler: nil, errorHandler: nil)
+        let session = WCSession.default
+        guard session.activationState == .activated else {
+            print("[WatchSync] Cannot send end_meal — session not activated")
+            return
+        }
+        let message: [String: Any] = ["type": "end_meal"]
+        if session.isReachable {
+            session.sendMessage(message, replyHandler: nil) { error in
+                print("[WatchSync] sendEndMeal failed: \(error.localizedDescription) — falling back to transferUserInfo")
+                session.transferUserInfo(message)
+            }
+        } else {
+            print("[WatchSync] iPhone not reachable — using transferUserInfo for end_meal")
+            session.transferUserInfo(message)
+        }
     }
 }
 
 extension WatchSessionManager: WCSessionDelegate {
-    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {}
+    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {
+        if let error {
+            print("[WatchSync] Activation failed: \(error.localizedDescription)")
+        } else {
+            print("[WatchSync] Watch session activated — state: \(activationState.rawValue)")
+        }
+    }
 
     func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
         applyMessage(message)
