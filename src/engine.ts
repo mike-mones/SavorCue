@@ -562,18 +562,8 @@ export class SessionEngine {
       ? this.settings.ignoredPromptRepromptSec * 3
       : this.settings.ignoredPromptRepromptSec;
 
-    const event = createEvent(this.active.session.id, 'escalation_sent', {
-      metadata: { state: this.active.state, message },
-    });
-    await logEvent(event, this.settings, this.uid);
-    this.active.events.push(event);
-
-    showNotification('SavorCue', message);
-    if ('vibrate' in navigator) {
-      navigator.vibrate([200, 100, 200]);
-    }
-
-    // Reschedule: for fullness input, reset promptShownAt; for done/unlock, advance nextEscalationAt
+    // Update timer fields synchronously first to prevent duplicate escalations
+    // from concurrent tick() calls before the async work completes.
     const state = this.active.state;
     if (state === 'active_waiting_for_fullness_input') {
       this.active.timer.promptShownAt = new Date().toISOString();
@@ -581,7 +571,18 @@ export class SessionEngine {
       this.active.timer.nextEscalationAt = schedulePromptAt(repromptSec);
     }
 
+    showNotification('SavorCue', message);
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
+
+    const event = createEvent(this.active.session.id, 'escalation_sent', {
+      metadata: { state, message },
+    });
+    this.active.events.push(event);
     this.notify();
+
+    logEvent(event, this.settings, this.uid).catch(() => {});
   }
 
   // === Tick (call from setInterval) ===
@@ -619,7 +620,7 @@ export class SessionEngine {
         : this.settings.ignoredPromptRepromptSec;
       const elapsed = (now - new Date(timer.promptShownAt).getTime()) / 1000;
       if (elapsed >= repromptSec) {
-        this.sendEscalation('How full are you right now?');
+        this.sendEscalation('How full are you right now?').catch(() => {});
         return;
       }
     }
@@ -634,7 +635,7 @@ export class SessionEngine {
         this.active.state === 'done_flow'
           ? "Tap to confirm you've finished eating"
           : 'Do you want to keep eating?';
-      this.sendEscalation(message);
+      this.sendEscalation(message).catch(() => {});
       return;
     }
   }
