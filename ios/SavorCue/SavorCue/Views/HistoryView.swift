@@ -2,7 +2,6 @@ import SwiftUI
 
 struct HistoryView: View {
     @EnvironmentObject var mealVM: MealViewModel
-    @State private var sessions: [MealSession] = []
     
     var body: some View {
         ZStack {
@@ -16,7 +15,7 @@ struct HistoryView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                     
-                    if sessions.isEmpty {
+                    if mealVM.allSessions.isEmpty {
                         VStack(spacing: 8) {
                             Text("No meals tracked yet")
                                 .font(.system(size: 16))
@@ -25,12 +24,9 @@ struct HistoryView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 60)
                     } else {
-                        ForEach(sessions) { session in
+                        ForEach(mealVM.allSessions) { session in
                             SessionCard(session: session) {
-                                Task {
-                                    await FirestoreService.shared.deleteSession(session.id)
-                                    sessions.removeAll { $0.id == session.id }
-                                }
+                                mealVM.deleteSession(session.id)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -38,9 +34,6 @@ struct HistoryView: View {
                 }
                 .padding(.bottom, 100)
             }
-        }
-        .task {
-            sessions = await FirestoreService.shared.getAllSessions()
         }
     }
 }
