@@ -64,6 +64,16 @@ class FirestoreService {
         }
     }
     
+    func deleteSessionThrowing(_ sessionId: String) async throws {
+        guard let uid else { return }
+        try await db.collection("users").document(uid).collection("sessions").document(sessionId).delete()
+        let events = try await db.collection("users").document(uid).collection("events")
+            .whereField("sessionId", isEqualTo: sessionId).getDocuments()
+        for doc in events.documents {
+            try await doc.reference.delete()
+        }
+    }
+    
     func getAllSessions() async -> [MealSession] {
         guard let uid else { return [] }
         do {

@@ -244,6 +244,19 @@ class MealViewModel: ObservableObject {
         publishWatchState()
     }
     
+    func deleteSession(_ sessionId: String) {
+        allSessions.removeAll { $0.id == sessionId }
+        Task {
+            do {
+                try await firestore.deleteSessionThrowing(sessionId)
+            } catch {
+                // Restore the session in allSessions if deletion fails
+                let restored = await firestore.getAllSessions()
+                allSessions = restored
+            }
+        }
+    }
+    
     private func cleanup() {
         stopTimer()
         session = nil
