@@ -1,13 +1,37 @@
 import SwiftUI
 
 extension Color {
-    static let appBackground = Color(red: 250/255, green: 249/255, blue: 247/255)
+    static let appBackground = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 18/255, green: 18/255, blue: 18/255, alpha: 1)
+            : UIColor(red: 250/255, green: 249/255, blue: 247/255, alpha: 1)
+    })
     static let appAccent = Color(red: 13/255, green: 148/255, blue: 136/255)
-    static let appCard = Color.white
-    static let appChip = Color(red: 240/255, green: 238/255, blue: 235/255)
-    static let appTextPrimary = Color(red: 26/255, green: 26/255, blue: 26/255)
-    static let appTextSecondary = Color(red: 138/255, green: 138/255, blue: 138/255)
-    static let appTextTertiary = Color(red: 176/255, green: 173/255, blue: 168/255)
+    static let appCard = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 28/255, green: 28/255, blue: 30/255, alpha: 1)
+            : UIColor.white
+    })
+    static let appChip = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 44/255, green: 44/255, blue: 46/255, alpha: 1)
+            : UIColor(red: 240/255, green: 238/255, blue: 235/255, alpha: 1)
+    })
+    static let appTextPrimary = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.white
+            : UIColor(red: 26/255, green: 26/255, blue: 26/255, alpha: 1)
+    })
+    static let appTextSecondary = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 160/255, green: 160/255, blue: 160/255, alpha: 1)
+            : UIColor(red: 138/255, green: 138/255, blue: 138/255, alpha: 1)
+    })
+    static let appTextTertiary = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 120/255, green: 120/255, blue: 120/255, alpha: 1)
+            : UIColor(red: 176/255, green: 173/255, blue: 168/255, alpha: 1)
+    })
     static let appDanger = Color(red: 212/255, green: 117/255, blue: 107/255)
     
     static func fullnessColor(_ value: Int) -> Color {

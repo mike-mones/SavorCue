@@ -51,7 +51,7 @@ struct MainTabView: View {
             .padding(.top, 8)
             .padding(.bottom, 4)
             .background(
-                Color.white
+                Color.appCard
                     .shadow(color: .black.opacity(0.06), radius: 12, y: -1)
                     .ignoresSafeArea()
             )
